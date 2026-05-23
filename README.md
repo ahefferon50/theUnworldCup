@@ -346,7 +346,6 @@ function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
   return Math.round(state.stats.reduce((a,s)=>a+(p[s.id]||0)*s.weight,0) / total);
 }
-function stars(sc) { const n=Math.round((sc/100)*5); return '★'.repeat(Math.max(1,n))+'☆'.repeat(5-Math.max(1,n)); }
 function posClass(pos) { return pos==='attacker'?'pos-atk':pos==='defender'?'pos-def':'pos-gk'; }
 
 function rosterCountsFor(teamId) {
