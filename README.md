@@ -330,7 +330,7 @@ function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
 }
 
-// Poll for changes from other tabs every 3 seconds
+// Poll for changes from other tabs every 10 seconds
 setInterval(() => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
