@@ -228,7 +228,7 @@ function generateReport(game) {
 const RAW = [
   ['GLOOP','attacker',82,90,44,75,80],['Ugly Child #2','attacker',88,85,40,78,72],
   ['Goth Napoleon','attacker',91,87,35,72,68],['Cleopatra (but hot','attacker',79,84,42,77,74],
-  ['Morwenna Ux','attacker',84,89,37,81,69],['Ash Pendry','attacker',80,86,41,76,73],
+  ['Ux','attacker',84,89,37,81,69],['Ash Skyhigh','attacker',80,86,41,76,73],
   ['Solene Drax','attacker',83,88,39,79,71],['Wren Hallow','attacker',78,83,43,74,75],
   ['Aldric Vane','attacker',86,91,36,78,67],['Cleo Bask','attacker',81,85,40,80,72],
   ['Edda Lorn','attacker',87,90,38,77,70],['Zenn Pallor','attacker',83,87,41,78,73],
