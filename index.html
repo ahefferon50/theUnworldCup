@@ -381,7 +381,7 @@ function updateTicker() {
   const atk = state.players.filter(p=>p.pos==='attacker').length;
   const def = state.players.filter(p=>p.pos==='defender').length;
   const gk = state.players.filter(p=>p.pos==='goalie').length;
-  el.textContent = `// ${state.players.length} players (${atk} atk / ${def} def / ${gk} gk) // ${state.teams.length} teams // ${state.leagueName||'unworld cup'} // last sync: ${new Date().toLocaleTimeString()}`;
+el.textContent = `// ${state.players.length} players (${atk} atk / ${def} def / ${gk} gk) // ${state.teams.length} teams // ${state.leagueName||'unworld cup'} // last sync: ${new Date().toLocaleTimeString()}`;
 }
 
 function filterPlayers(f, btn) {
