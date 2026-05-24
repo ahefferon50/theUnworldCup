@@ -127,7 +127,15 @@ button:disabled{opacity:.35;pointer-events:none}
 .fix-teams{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .fix-score{font-size:18px;font-weight:700;min-width:60px;text-align:center}
 .fix-report{font-size:11px;color:var(--fg2);line-height:1.7;font-style:italic;border-left:2px solid var(--border);padding-left:10px}
-.round-hdr{font-size:11px;color:var(--warn);letter-spacing:.2em;text-transform:uppercase;padding:14px 0 8px;border-top:1px solid var(--border);margin-top:8px}
+.round-hdr{font-size:11px;color:var(--warn);letter-spacing:.2em;text-transform:uppercase;padding:14px 0 8px;border-top:1px solid var(--border);margin-top:8px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
+.round-hdr:hover{color:var(--fg)}
+.round-toggle{font-size:14px;color:var(--fg3);transition:transform .2s;display:inline-block}
+.round-body.collapsed{display:none}
+.weather-box{border:1px solid var(--border);padding:12px 16px;margin-bottom:10px;background:var(--bg2);position:relative}
+.weather-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.weather-desc{font-size:11px;color:var(--fg2);font-style:italic;line-height:1.5}
+.weather-roll{font-size:10px;color:var(--fg3);margin-top:6px;letter-spacing:.12em;text-transform:uppercase}
+.weather-icon{position:absolute;top:12px;right:14px;font-size:22px;opacity:.7}
 .slot-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
 .slot-label.atk{color:#ff8844}.slot-label.def{color:#44ccff}.slot-label.gk{color:#cc88ff}.slot-label.mid{color:#88ff44}
 .slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
@@ -603,6 +611,15 @@ function claimTeamAndGoDraft(id) {
   switchTab('draft');
 }
 
+// track which rounds are collapsed (collapsed by default after round 1)
+const collapsedRounds = new Set();
+
+function toggleRound(r) {
+  if (collapsedRounds.has(r)) collapsedRounds.delete(r);
+  else collapsedRounds.add(r);
+  renderLeague();
+}
+
 function renderLeague() {
   const h2h = document.getElementById('h2hGrid');
   const fl = document.getElementById('fixtureLog');
@@ -641,10 +658,45 @@ function renderLeague() {
 
   const games = [...(state.games||[])].reverse();
   if (!games.length) { fl.innerHTML = '<div class="notice">no matches played yet</div>'; return; }
+
   const byRound = {};
   games.forEach(g => { const r=g.round||1; if(!byRound[r])byRound[r]=[]; byRound[r].push(g); });
   const rounds = Object.keys(byRound).sort((a,b)=>b-a);
-  fl.innerHTML = rounds.map(r => `<div class="round-hdr">round ${r}</div>${byRound[r].map(g=>`<div class="fixture"><div class="fix-teams"><div style="flex:1;font-size:13px;font-weight:700">${g.home}</div><div class="fix-score">${g.homeScore} – ${g.awayScore}</div><div style="flex:1;text-align:right;font-size:13px;font-weight:700">${g.away}</div></div><div class="fix-report">${g.report||''}</div></div>`).join('')}`).join('');
+
+  fl.innerHTML = rounds.map(r => {
+    const collapsed = collapsedRounds.has(r);
+    const matchCount = byRound[r].length;
+    const rGames = byRound[r];
+
+    // get weather from first game of the round (all games same round share weather)
+    const w = rGames[0].weather;
+    const weatherHtml = w ? `<div class="weather-box" style="border-color:${w.color}40">
+      <div class="weather-icon">${w.icon}</div>
+      <div class="weather-name" style="color:${w.color}">${w.name}</div>
+      <div class="weather-desc">${w.desc}</div>
+      <div class="weather-roll">roll: ${w.roll}${w.reroll ? ` → rerolled: ${w.reroll} (${w.originalName})` : ''}${w.heroId ? ` // survivor: ${(state.players.find(p=>p.id===w.heroId)||{name:'unknown'}).name}` : ''}</div>
+    </div>` : '';
+
+    const fixturesHtml = rGames.map(g => `
+      <div class="fixture">
+        <div class="fix-teams">
+          <div style="flex:1;font-size:13px;font-weight:700">${g.home}</div>
+          <div class="fix-score">${g.homeScore} – ${g.awayScore}</div>
+          <div style="flex:1;text-align:right;font-size:13px;font-weight:700">${g.away}</div>
+        </div>
+        <div class="fix-report">${g.report||''}</div>
+      </div>`).join('');
+
+    return `
+      <div class="round-hdr" onclick="toggleRound('${r}')">
+        <span>round ${r} &nbsp;<span style="color:var(--fg3);font-weight:400;letter-spacing:.05em;text-transform:none;font-size:10px">${matchCount} match${matchCount!==1?'es':''}</span></span>
+        <span class="round-toggle">${collapsed ? '▸' : '▾'}</span>
+      </div>
+      <div class="round-body${collapsed?' collapsed':''}">
+        ${weatherHtml}
+        ${fixturesHtml}
+      </div>`;
+  }).join('');
 }
 
 function renderStandings() {
@@ -733,31 +785,167 @@ function resetLeague() {
   saveState(); render(); flash('league reset');
 }
 
+// ─── WEATHER SYSTEM ──────────────────────────────────────────────────────────
+const WEATHER_TABLE = [
+  { min:1,  max:30, name:'fair & mild',                     icon:'☀️',  color:'#ffcc44', effect:'none',        desc:'Conditions are unremarkable. The pitch is dry. The sky is the usual sky.' },
+  { min:31, max:50, name:'stormy',                           icon:'⛈️',  color:'#44ccff', effect:'storm',       desc:'Rain hammers the pitch. Defenders and goalies find their footing easier than most.' },
+  { min:51, max:55, name:'earthquake',                       icon:'🌋',  color:'#ff8844', effect:'quake',       desc:'The ground moves. All stats are heightened unpredictably. Nothing can be relied upon.' },
+  { min:56, max:60, name:'ravens',                           icon:'🐦‍⬛', color:'#cc88ff', effect:'ravens',      desc:'A murder of ravens settles on the crossbars. Hustle is tripled. They watch everything.' },
+  { min:61, max:65, name:'upside down',                      icon:'🙃',  color:'#88ff44', effect:'upside_down', desc:'Something is inverted. Players whose names come first alphabetically find themselves doubled.' },
+  { min:66, max:70, name:'eerie mist',                       icon:'🌫️',  color:'#ff4444', effect:'mist',        desc:'A pale mist rolls in from no particular direction. Attackers move through it as if they belong there.' },
+  { min:71, max:75, name:'odd figures hover over the pitch', icon:'👁️',  color:'#8844ff', effect:'figures',     desc:'They do not interfere. They observe. All stats are redistributed at random while they remain.' },
+  { min:76, max:80, name:'sudden blackout',                  icon:'⬛',  color:'#444444', effect:'blackout',    desc:'The lights go out. All players are reduced to nothing except one, who becomes everything.' },
+  { min:81, max:85, name:'the beast that has no name',       icon:'❓',  color:'#ff4444', effect:'beast',       desc:'It arrives. It watches. It has no effect on the score. The players do not speak of it afterward.' },
+  { min:86, max:90, name:'quicksand',                        icon:'🏜️',  color:'#ff8844', effect:'quicksand',   desc:'The pitch thickens underfoot. Speed is doubled for those who adapt. Others sink.' },
+  { min:91, max:95, name:'zero gravity forcefield explodes', icon:'🌀',  color:'#44ff88', effect:'gravity',     desc:'For reasons that remain classified, goalies and midfielders achieve extraordinary things.' },
+  { min:96, max:100,name:'no weather is present',            icon:'🤔',  color:'#888888', effect:'reroll',      desc:'Which seems odd. A secondary condition is selected. The league does not comment.' },
+];
+
+function rollWeather() {
+  const roll = Math.floor(Math.random() * 100) + 1;
+  let w = WEATHER_TABLE.find(w => roll >= w.min && roll <= w.max);
+  // 96-100: "no weather present" — reroll once
+  if (w.effect === 'reroll') {
+    const roll2 = Math.floor(Math.random() * 95) + 1;
+    const w2 = WEATHER_TABLE.find(w => roll2 >= w.min && roll2 <= w.max);
+    return { ...w2, roll, reroll: roll2, originalName: w.name };
+  }
+  return { ...w, roll };
+}
+
+// Apply weather multipliers to a working copy of a player's stats
+// Returns a new player object — does NOT mutate state.players
+function applyWeather(player, weather, allPlayers) {
+  const p = { ...player };
+  const ef = weather.effect;
+
+  if (ef === 'none' || ef === 'beast') return p;  // no change
+
+  if (ef === 'storm') {
+    // small benefit to defenders and goalies
+    if (p.pos === 'defender' || p.pos === 'goalie') {
+      p.def = Math.min(100, Math.round(p.def * 1.25));
+      p.stm = Math.min(100, Math.round(p.stm * 1.15));
+    }
+  }
+
+  if (ef === 'quake') {
+    // heighten random stats unpredictably
+    const fields = ['spd','str','def','vis','stm'];
+    fields.forEach(f => {
+      const mult = 0.7 + Math.random() * 0.9; // 0.7x–1.6x each
+      p[f] = Math.min(100, Math.round(p[f] * mult));
+    });
+  }
+
+  if (ef === 'ravens') {
+    // triple hustle (stm)
+    p.stm = Math.min(100, p.stm * 3);
+  }
+
+  if (ef === 'upside_down') {
+    // double stats for players whose name comes alphabetically first
+    const names = allPlayers.map(pl => pl.name).sort();
+    const median = names[Math.floor(names.length / 2)];
+    if (p.name.localeCompare(median) < 0) {
+      ['spd','str','def','vis','stm'].forEach(f => p[f] = Math.min(100, p[f] * 2));
+    }
+  }
+
+  if (ef === 'mist') {
+    // triple all stats for attackers
+    if (p.pos === 'attacker') {
+      ['spd','str','def','vis','stm'].forEach(f => p[f] = Math.min(100, p[f] * 3));
+    }
+  }
+
+  if (ef === 'figures') {
+    // randomize all stats
+    ['spd','str','def','vis','stm'].forEach(f => p[f] = Math.floor(Math.random() * 100) + 1);
+  }
+
+  if (ef === 'blackout') {
+    // stored on weather object: one chosen player gets all stats maxed, rest go to 0
+    if (weather._heroId && p.id === weather._heroId) {
+      ['spd','str','def','vis','stm'].forEach(f => p[f] = 100);
+    } else {
+      ['spd','str','def','vis','stm'].forEach(f => p[f] = 0);
+    }
+  }
+
+  if (ef === 'quicksand') {
+    p.spd = Math.min(100, p.spd * 2);
+  }
+
+  if (ef === 'gravity') {
+    if (p.pos === 'goalie' || p.pos === 'midfielder') {
+      ['spd','str','def','vis','stm'].forEach(f => p[f] = Math.min(100, p[f] * 3));
+    }
+  }
+
+  return p;
+}
+
 function runSim() {
   if (state.teams.length < 2) { flash('need 2+ teams'); return; }
   state.roundNum = (state.roundNum||0) + 1;
+
+  // Roll weather
+  const weather = rollWeather();
+
+  // For blackout: pick one random player from all drafted players as the hero
+  if (weather.effect === 'blackout') {
+    const allDrafted = Object.keys(state.draftedBy);
+    if (allDrafted.length > 0) {
+      weather._heroId = allDrafted[Math.floor(Math.random() * allDrafted.length)];
+    }
+  }
+
   const teams = [...state.teams];
   for (let i=0; i<teams.length-1; i++) {
     for (let j=i+1; j<teams.length; j++) {
-      const h=teams[i], a=teams[j];
-      const hR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-      const aR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+      const h = teams[i], a = teams[j];
+
+      // Get rosters and apply weather
+      const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+      const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+      const hR = hRaw.map(p => applyWeather(p, weather, state.players));
+      const aR = aRaw.map(p => applyWeather(p, weather, state.players));
+
       const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
       const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-      const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-      const aGk = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
-      const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-      const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
       const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-      const hGk = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+      const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+      const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+      const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+      const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+      const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+
       const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20;
       const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
-      const g = {home:h.name, away:a.name, homeId:h.id, awayId:a.id, homeScore:Math.max(0,Math.round(hPow/55)), awayScore:Math.max(0,Math.round(aPow/55)), round:state.roundNum};
+
+      const g = {
+        home: h.name, away: a.name, homeId: h.id, awayId: a.id,
+        homeScore: Math.max(0, Math.round(hPow/55)),
+        awayScore: Math.max(0, Math.round(aPow/55)),
+        round: state.roundNum,
+        weather: {
+          name: weather.name,
+          icon: weather.icon,
+          color: weather.color,
+          desc: weather.desc,
+          roll: weather.roll,
+          reroll: weather.reroll || null,
+          originalName: weather.originalName || null,
+          heroId: weather._heroId || null,
+        }
+      };
       g.report = generateReport(g);
       state.games.push(g);
     }
   }
-  saveState(); renderLeague(); renderStandings(); flash(`round ${state.roundNum} simulated — ${state.teams.length*(state.teams.length-1)/2} matches played`);
+  saveState(); renderLeague(); renderStandings();
+  flash(`round ${state.roundNum} — weather: ${weather.name}`);
 }
 
 function showCreateTeam() { showTeamModal(null); }
