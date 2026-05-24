@@ -340,7 +340,7 @@ setInterval(() => {
       render();
     }
   } catch(e) {}
-}, 3000);
+}, 10000);
 
 function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
