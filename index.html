@@ -1008,7 +1008,7 @@ function doSwitchTab(name) {
   document.querySelectorAll('.tc').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  const map = {players:0, draft:1, teams:2, league:3, standings:4, owner:5};
+  const map = {players:3, draft:4, teams:2, league:0, standings:1, owner:5};
   document.querySelectorAll('.tab')[map[name]].classList.add('active');
   if (name==='draft') renderDraft();
   if (name==='owner') renderOwner();
