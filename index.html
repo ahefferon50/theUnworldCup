@@ -273,8 +273,8 @@ function generateReport(game) {
   const defender = aR.filter(p=>p.pos==='defender')[0] || null;
 
   let s1 = '';
-  if (scorer && keeper) s1 = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${Math.floor(Math.random()*85+5)}th minute; ${keeper.name} ${rnd(VERBS_GK)} two subsequent attempts before the ground shifted.`;
-  else if (scorer) s1 = `${scorer.name} ${rnd(VERBS_ATK)} the only goal of the half, which officials later described as "probable".`;
+  if (scorer && keeper) s1 = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${Math.floor(Math.random()*85+5)}th minute; ${keeper.name} ${rnd(VERBS_GK)}.`;
+  else if (scorer) s1 = `${scorer.name} ${rnd(VERBS_ATK)}".`;
   else s1 = `The match proceeded. Causality was maintained, more or less.`;
   return `${s1} "${rnd(WASTELAND)}" ${rnd(OMINOUS)}`;
 }
