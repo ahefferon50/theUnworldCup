@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -267,109 +268,15 @@ function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function generateReport(game) {
   const hR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.homeId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
   const aR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.awayId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-  const allR = [...hR, ...aR];
+  const scorer = hR.filter(p=>p.pos==='attacker')[0] || hR[0] || null;
+  const keeper = aR.filter(p=>p.pos==='goalie')[0] || null;
+  const defender = aR.filter(p=>p.pos==='defender')[0] || null;
 
-  const hAtk = hR.filter(p=>p.pos==='attacker');
-  const hMid = hR.filter(p=>p.pos==='midfielder');
-  const hDef = hR.filter(p=>p.pos==='defender');
-  const hGk  = hR.filter(p=>p.pos==='goalie');
-  const aAtk = aR.filter(p=>p.pos==='attacker');
-  const aMid = aR.filter(p=>p.pos==='midfielder');
-  const aDef = aR.filter(p=>p.pos==='defender');
-  const aGk  = aR.filter(p=>p.pos==='goalie');
-
-  const min = () => Math.floor(Math.random()*85+5);
-  const maybe = p => Math.random() < p;
-
-  // ── build pool of all possible named-player sentences ──
-  const actionPool = [];
-
-  if (hAtk.length && aGk.length)
-    actionPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} a goal in the ${min()}th minute; ${rnd(aGk).name} ${rnd(VERBS_GK)} two subsequent attempts before the ground shifted.`);
-  if (hAtk.length && aGk.length)
-    actionPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} in the ${min()}th minute. ${rnd(aGk).name} ${rnd(VERBS_GK)} everything that followed.`);
-  if (hAtk.length)
-    actionPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} the only goal of the half, which officials later described as "probable".`);
-  if (aAtk.length && hGk.length)
-    actionPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} from range in the ${min()}th; ${rnd(hGk).name} ${rnd(VERBS_GK)} the follow-up.`);
-  if (aAtk.length)
-    actionPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} an attempt that was ruled ${maybe(0.5)?'valid':'inconclusive'}.`);
-  if (aAtk.length)
-    actionPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} twice in the second half. Both efforts are listed in the match report under different categories.`);
-  if (aGk.length)
-    actionPool.push(`${rnd(aGk).name} ${rnd(VERBS_GK)} three attempts in the ${min()}th minute alone. Observers have not agreed on what they witnessed.`);
-  if (hGk.length)
-    actionPool.push(`${rnd(hGk).name} ${rnd(VERBS_GK)} what would have been the equaliser. The crowd did not react immediately.`);
-  if (hGk.length && aAtk.length)
-    actionPool.push(`${rnd(aAtk).name} bore down on goal in the ${min()}th; ${rnd(hGk).name} ${rnd(VERBS_GK)} the attempt and stood very still afterwards.`);
-  if (aDef.length && hAtk.length)
-    actionPool.push(`${rnd(aDef).name} ${rnd(verbs_Def)} ${rnd(hAtk).name} in the ${min()}th minute, which briefly altered the shape of the game.`);
-  if (aDef.length)
-    actionPool.push(`${rnd(aDef).name} ${rnd(verbs_Def)} an advance that had seemed, until that point, unstoppable.`);
-  if (hDef.length && aAtk.length)
-    actionPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} ${rnd(aAtk).name} in the ${min()}th. The attempt was not spoken of again.`);
-  if (hDef.length)
-    actionPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} the approach entirely. The approach has not commented.`);
-  if (aDef.length && hAtk.length)
-    actionPool.push(`${rnd(hAtk).name} was ${rnd(verbs_Def)} by ${rnd(aDef).name} before reaching the area. What happened in that corridor of grass has not been fully established.`);
-  if (hMid.length)
-    actionPool.push(`${rnd(hMid).name} controlled the tempo against the opposing midfield for a period officials estimated at most of the second half.`);
-  if (aMid.length)
-    actionPool.push(`${rnd(aMid).name} imposed a kind of order on the centre before being replaced by something less legible.`);
-  if (hMid.length && aMid.length)
-    actionPool.push(`${rnd(hMid).name} and ${rnd(aMid).name} contested the midfield for the duration. Neither has described the experience publicly.`);
-  if (hMid.length)
-    actionPool.push(`${rnd(hMid).name} threaded a passage through the lines, creating three chances that were each ruled to have occurred at the wrong time.`);
-
-  if (!actionPool.length)
-    actionPool.push('The match proceeded. Causality was maintained, more or less.');
-
-  // ── shuffle pool ──
-  for (let i=actionPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[actionPool[i],actionPool[j]]=[actionPool[j],actionPool[i]];}
-
-  // ── guarantee at least two named players are mentioned ──
-  // count distinct player names already in chosen sentences
-  function namedPlayersIn(sentences) {
-    return allR.filter(p => sentences.some(s => s.includes(p.name)));
-  }
-
-  // start with up to 2 action sentences
-  const chosen = actionPool.slice(0, maybe(0.4) ? 2 : 1);
-
-  // if fewer than 2 distinct players named so far, keep pulling from the pool
-  let poolIdx = chosen.length;
-  while (namedPlayersIn(chosen).length < Math.min(2, allR.length) && poolIdx < actionPool.length) {
-    chosen.push(actionPool[poolIdx++]);
-  }
-
-  // last-resort: if still < 2 named players (e.g. rosters mostly empty), add explicit fallback sentences
-  if (allR.length >= 2 && namedPlayersIn(chosen).length < 2) {
-    // pick two players not yet mentioned
-    const mentioned = new Set(namedPlayersIn(chosen).map(p=>p.id));
-    const remaining = allR.filter(p=>!mentioned.has(p.id));
-    if (remaining.length) {
-      const p1 = rnd(remaining);
-      chosen.push(`${p1.name} was present for the duration and has been noted as such.`);
-    }
-  }
-
-  // ── optional extras ──
-  if (maybe(0.6) && allR.length)
-    chosen.push(`${rnd(['Player of the match, by general and uncomfortable consensus, was','Officials later designated the standout performance as belonging to','Those keeping records noted one name above all others:','Whatever happened here, it happened most noticeably around'])} ${rnd(allR).name}, ${rnd(['who declined to be interviewed.','who was not available for comment and has not been since.','whose post-match remarks were described as "consistent with someone who had played."','who left the pitch at the final whistle without looking back.','who was seen afterwards sitting alone in the car park for an indeterminate period.','who, when asked to describe the game, said it had occurred.','who smiled in a way that did not reach anywhere.'])}`);
-  if (maybe(0.45)) chosen.push(rnd(['The home coach had not moved from the technical area since the 12th minute and did not appear to be breathing.','The away manager was seen consulting a document during the second half. The document appeared to be blank.','Neither coach made a substitution. Sources close to the bench say neither coach acknowledged the option existed.','The home coach addressed the team at half time. The team emerged unchanged. The coach did not emerge at all.','An assistant coach on the away side was observed writing something in a notebook, then eating the page.','The away coaching staff applauded a moment that replays show was not a moment.','The home manager, when asked about the result post-match, said only: "yes."','A figure in a long coat occupied the away dugout for the final twenty minutes. The club has not confirmed who this was.']));
-  if (maybe(0.35)) chosen.push(rnd(['Attendance was recorded as either four thousand or one. The discrepancy has not been explained.','The home supporters were quiet for a period in the second half that those present estimate at either three minutes or forty.','A small group in the east stand left before full time. They have not been identified.','The away supporters sang a song that witnesses describe as "familiar, but wrong."','Someone in the crowd knew what was going to happen. This was noted and not followed up.','The stadium announcer mispronounced every name and did not correct any of them.','Row J was empty at kickoff. By half time it was full. No one in row J has been interviewed.']));
-  if (maybe(0.4))  chosen.push(rnd(['The ball spent eleven minutes in the air during the second half. This is not a record but it is close.','A penalty was not awarded. Whether one should have been remains, officially, an open question.','The referee added four minutes of stoppage time and then, without explanation, subtracted two.','An injury was treated on the pitch for six minutes. The player involved returned and was not thereafter visible.','The match ended at the correct time. Whether it ended correctly is a separate matter.','The corner flags were replaced at half time. The original flags were not recovered.']));
-
-  // ── Wasteland quote (shuffled in with middle) ──
-  chosen.push(`"${rnd(WASTELAND)}"`);
-
-  // ── shuffle everything except the final OMINOUS ──
-  for (let i=chosen.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[chosen[i],chosen[j]]=[chosen[j],chosen[i]];}
-
-  // ── OMINOUS always last ──
-  chosen.push(rnd(OMINOUS));
-
-  return chosen.join(' ');
+  let s1 = '';
+  if (scorer && keeper) s1 = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${Math.floor(Math.random()*85+5)}th minute; ${keeper.name} ${rnd(VERBS_GK)} two subsequent attempts before the ground shifted.`;
+  else if (scorer) s1 = `${scorer.name} ${rnd(VERBS_ATK)} the only goal of the half, which officials later described as "probable".`;
+  else s1 = `The match proceeded. Causality was maintained, more or less.`;
+  return `${s1} "${rnd(WASTELAND)}" ${rnd(OMINOUS)}`;
 }
 
 const RAW = [
@@ -1090,6 +997,14 @@ function saveTeam(isNew, existingId) {
 function closeModal() { document.getElementById('modalMount').innerHTML = ''; }
 
 function switchTab(name) {
+  if (name === 'owner') {
+    showOwnerPasswordModal();
+    return;
+  }
+  doSwitchTab(name);
+}
+
+function doSwitchTab(name) {
   document.querySelectorAll('.tc').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
@@ -1099,6 +1014,42 @@ function switchTab(name) {
   if (name==='owner') renderOwner();
   if (name==='league') renderLeague();
   if (name==='teams') renderTeams();
+}
+
+function showOwnerPasswordModal() {
+  const mount = document.getElementById('modalMount');
+  mount.innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="width:320px">
+      <div class="modal-title">owner access</div>
+      <div style="margin-bottom:14px;font-size:11px;color:var(--fg3)">enter the password to continue</div>
+      <input type="password" id="ownerPwInput" placeholder="password" style="margin-bottom:12px"
+        onkeydown="if(event.key==='Enter')checkOwnerPassword()">
+      <div id="ownerPwError" style="font-size:11px;color:var(--danger);margin-bottom:10px;display:none">incorrect password</div>
+      <div class="brow" style="margin-top:0">
+        <button class="primary" onclick="checkOwnerPassword()">enter</button>
+        <button onclick="closeModal()">cancel</button>
+      </div>
+    </div>
+  </div>`;
+  // focus the input after render
+  setTimeout(() => {
+    const inp = document.getElementById('ownerPwInput');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function checkOwnerPassword() {
+  const inp = document.getElementById('ownerPwInput');
+  if (!inp) return;
+  if (inp.value === 'scout') {
+    closeModal();
+    doSwitchTab('owner');
+  } else {
+    const err = document.getElementById('ownerPwError');
+    if (err) err.style.display = 'block';
+    inp.value = '';
+    inp.focus();
+  }
 }
 
 let ft;
