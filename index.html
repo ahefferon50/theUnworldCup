@@ -258,8 +258,9 @@ const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 
 const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
 const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names.","The away team bus arrived. The away team had not been on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
-const VERBS_ATK = ['struck','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net'];
-const VERBS_GK = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to'];
+const VERBS_ATK = ['struck','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
+const VERBS_GK = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to','Ate',];
+const verbs_Def = ['fucking nutted', 'deleted from the world', 'blocked', 'refused to block', 'dedended', 'stopped']
 
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
@@ -268,6 +269,8 @@ function generateReport(game) {
   const aR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.awayId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
   const scorer = hR.filter(p=>p.pos==='attacker')[0] || hR[0] || null;
   const keeper = aR.filter(p=>p.pos==='goalie')[0] || null;
+  const defender = aR.filter(p=>p.pos==='defender')[0] || null;
+
   let s1 = '';
   if (scorer && keeper) s1 = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${Math.floor(Math.random()*85+5)}th minute; ${keeper.name} ${rnd(VERBS_GK)} two subsequent attempts before the ground shifted.`;
   else if (scorer) s1 = `${scorer.name} ${rnd(VERBS_ATK)} the only goal of the half, which officials later described as "probable".`;
@@ -788,17 +791,17 @@ function resetLeague() {
 // ─── WEATHER SYSTEM ──────────────────────────────────────────────────────────
 const WEATHER_TABLE = [
   { min:1,  max:30, name:'fair & mild',                     icon:'☀️',  color:'#ffcc44', effect:'none',        desc:'Conditions are unremarkable. The pitch is dry. The sky is the usual sky.' },
-  { min:31, max:50, name:'stormy',                           icon:'⛈️',  color:'#44ccff', effect:'storm',       desc:'Rain hammers the pitch. Defenders and goalies find their footing easier than most.' },
+  { min:31, max:50, name:'stormy',                           icon:'⛈️',  color:'#44ccff', effect:'storm',       desc:'Rain hammers the pitch.' },
   { min:51, max:55, name:'earthquake',                       icon:'🌋',  color:'#ff8844', effect:'quake',       desc:'The ground moves. All stats are heightened unpredictably. Nothing can be relied upon.' },
-  { min:56, max:60, name:'ravens',                           icon:'🐦‍⬛', color:'#cc88ff', effect:'ravens',      desc:'A murder of ravens settles on the crossbars. Hustle is tripled. They watch everything.' },
-  { min:61, max:65, name:'upside down',                      icon:'🙃',  color:'#88ff44', effect:'upside_down', desc:'Something is inverted. Players whose names come first alphabetically find themselves doubled.' },
-  { min:66, max:70, name:'eerie mist',                       icon:'🌫️',  color:'#ff4444', effect:'mist',        desc:'A pale mist rolls in from no particular direction. Attackers move through it as if they belong there.' },
-  { min:71, max:75, name:'odd figures hover over the pitch', icon:'👁️',  color:'#8844ff', effect:'figures',     desc:'They do not interfere. They observe. All stats are redistributed at random while they remain.' },
+  { min:56, max:60, name:'ravens',                           icon:'🐦‍⬛', color:'#cc88ff', effect:'ravens',      desc:'A murder of ravens settles on the crossbars. They watch everything.' },
+  { min:61, max:65, name:'upside down',                      icon:'🙃',  color:'#88ff44', effect:'upside_down', desc:'Something is inverted' },
+  { min:66, max:70, name:'eerie mist',                       icon:'🌫️',  color:'#ff4444', effect:'mist',        desc:'A pale mist rolls in from no particular direction. Watch yourself.' },
+  { min:71, max:75, name:'odd figures hover over the pitch', icon:'👁️',  color:'#8844ff', effect:'figures',     desc:'They do not interfere. They observe.' },
   { min:76, max:80, name:'sudden blackout',                  icon:'⬛',  color:'#444444', effect:'blackout',    desc:'The lights go out. All players are reduced to nothing except one, who becomes everything.' },
   { min:81, max:85, name:'the beast that has no name',       icon:'❓',  color:'#ff4444', effect:'beast',       desc:'It arrives. It watches. It has no effect on the score. The players do not speak of it afterward.' },
-  { min:86, max:90, name:'quicksand',                        icon:'🏜️',  color:'#ff8844', effect:'quicksand',   desc:'The pitch thickens underfoot. Speed is doubled for those who adapt. Others sink.' },
+  { min:86, max:90, name:'quicksand',                        icon:'🏜️',  color:'#ff8844', effect:'quicksand',   desc:'The pitch thickens underfoot..' },
   { min:91, max:95, name:'zero gravity forcefield explodes', icon:'🌀',  color:'#44ff88', effect:'gravity',     desc:'For reasons that remain classified, goalies and midfielders achieve extraordinary things.' },
-  { min:96, max:100,name:'no weather is present',            icon:'🤔',  color:'#888888', effect:'reroll',      desc:'Which seems odd. A secondary condition is selected. The league does not comment.' },
+  { min:96, max:100,name:'no weather is present',            icon:'🤔',  color:'#888888', effect:'reroll',      desc:'Which seems odd. The league does not comment.' },
 ];
 
 function rollWeather() {
@@ -824,8 +827,8 @@ function applyWeather(player, weather, allPlayers) {
   if (ef === 'storm') {
     // small benefit to defenders and goalies
     if (p.pos === 'defender' || p.pos === 'goalie') {
-      p.def = Math.min(100, Math.round(p.def * 1.25));
-      p.stm = Math.min(100, Math.round(p.stm * 1.15));
+      p.def = Math.min(100, Math.round(p.def * 2.25));
+      p.stm = Math.min(100, Math.round(p.stm * 2.15));
     }
   }
 
