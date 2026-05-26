@@ -258,27 +258,93 @@ const COLORS = ['#ff4444','#ff8844','#ffcc44','#44ff88','#44ccff','#8844ff','#ff
 const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 
 const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
+const randomevent  ['A player saw the red mist', ']
 const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names.","The away team bus arrived. The away team had not been on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
-const VERBS_ATK = ['struck','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
+const VERBS_ATK = ['struck','chipped in','petered out','crossed into the top corner','slammed home','yeeted','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
 const VERBS_GK = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to','Ate',];
-const verbs_Def = ['fucking nutted', 'deleted from the world', 'blocked', 'refused to block', 'dedended', 'stopped']
+const verbs_Def = ['fucking nutted', 'deleted from the world', 'blocked', 'refused to block', 'dedended', 'stopped','straight up punched another player']
 
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 function generateReport(game) {
-  const hR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.homeId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-  const aR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.awayId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-  const scorer = hR.filter(p=>p.pos==='attacker')[0] || hR[0] || null;
-  const keeper = aR.filter(p=>p.pos==='goalie')[0] || null;
-  const defender = aR.filter(p=>p.pos==='defender')[0] || null;
+  // 1. Gather Rosters
+  const hR = Object.entries(state.draftedBy)
+    .filter(([pid, tid]) => tid === game.homeId)
+    .map(([pid]) => state.players.find(p => p.id === pid))
+    .filter(Boolean);
+    
+  const aR = Object.entries(state.draftedBy)
+    .filter(([pid, tid]) => tid === game.awayId)
+    .map(([pid]) => state.players.find(p => p.id === pid))
+    .filter(Boolean);
 
-  let s1 = '';
-  if (scorer && keeper) s1 = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${Math.floor(Math.random()*85+5)}th minute; ${keeper.name} ${rnd(VERBS_GK)}.`;
-  else if (scorer) s1 = `${scorer.name} ${rnd(VERBS_ATK)}".`;
-  else s1 = `The match proceeded. Causality was maintained, more or less.`;
-  return `${s1} "${rnd(WASTELAND)}" ${rnd(OMINOUS)}`;
+  // 2. Cast Roles (with Midfielder added)
+  const scorer = hR.filter(p => p.pos === 'attacker')[0] || hR[0] || null;
+  const mid = hR.filter(p => p.pos === 'midfielder')[0] || null;
+  const keeper = aR.filter(p => p.pos === 'goalie')[0] || null;
+  const defender = aR.filter(p => p.pos === 'defender')[0] || null;
+
+  // Helper for generating a random match minute
+  const minute = () => Math.floor(Math.random() * 85 + 5);
+
+  // 3. Build a pool of random narrative templates
+  const templates = [];
+
+  // Path A: The classic attack vs defense/keeper showdown
+  if (scorer && keeper) {
+    let line = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${minute()}th minute; ${keeper.name} ${rnd(VERBS_GK)}.`;
+    if (defender && Math.random() > 0.5) {
+      line = `${scorer.name} danced past ${defender.name} and ${rnd(VERBS_ATK)} a goal in the ${minute()}th minute, leaving ${keeper.name} ${rnd(VERBS_GK)}.`;
+    }
+    templates.push(line);
+  }
+
+  // Path B: Midfield setup play
+  if (mid && scorer) {
+    templates.push(`In the ${minute()}th minute, ${mid.name} orchestrated a brilliant sequence, setting up ${scorer.name} who ${rnd(VERBS_ATK)} it home.`);
+  }
+
+  // Path C: Defensive masterclass
+  if (defender && (scorer || mid)) {
+    const target = scorer || mid;
+    templates.push(`The ${minute()}th minute saw a fierce clash when ${defender.name} utterly shut down ${target.name}'s advance.`);
+  }
+
+  // Path D: Solo Scorer effort
+  if (scorer) {
+    templates.push(`The crowd erupted in the ${minute()}th minute as ${scorer.name} ${rnd(VERBS_ATK)} a spectacular point.`);
+  }
+
+  // Fallback if rosters are completely empty
+  if (templates.length === 0) {
+    templates.push(`The match proceeded. Causality was maintained, more or less.`);
+  }
+
+  // Pick one random player event from our valid pool
+  let matchEvent = templates[Math.floor(Math.random() * templates.length)];
+
+  // 4. Dynamically mix in flavor text (Wasteland and Ominous)
+  // Instead of always appending them, they now have a randomized chance to appear
+  const includeWasteland = Math.random() > 0.4; // 60% chance
+  const includeOminous = Math.random() > 0.5;   // 50% chance
+
+  let finalReport = matchEvent;
+
+  // Randomly decide if flavor text goes BEFORE or AFTER the match event for variety
+  if (includeWasteland) {
+    if (Math.random() > 0.5) {
+      finalReport = `"${rnd(WASTELAND)}" ${finalReport}`;
+    } else {
+      finalReport = `${finalReport} "${rnd(WASTELAND)}"`;
+    }
+  }
+
+  if (includeOminous) {
+    finalReport = `${finalReport} ${rnd(OMINOUS)}`;
+  }
+
+  return finalReport.trim();
 }
-
 const RAW = [
   // attackers (~42 — was 64, moved ~22 to midfielder)
   ['Pissboy','attacker',82,90,44,75,80],['Hot Napoleon','attacker',12,85,40,78,72],
