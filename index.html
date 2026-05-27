@@ -9,9 +9,9 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // !! REPLACE THIS with your Firebase project config !!
+   // !! REPLACE THIS with your Firebase project config !!
   const firebaseConfig = {
-    apiKey: "YOUR AP KEY HERE",
+    apiKey: "YOUR_API_KEY",
     authDomain: "Unworldcup.firebaseapp.com",
     databaseURL: "https://unworldcup-default-rtdb.firebaseio.com/",
     projectId: "Unworldcup",
@@ -19,7 +19,7 @@
     messagingSenderId: "YOUR_SENDER_ID",
     appId: "YOUR_APP_ID"
   };
-
+  
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const leagueRef = ref(db, 'league');
