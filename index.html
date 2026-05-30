@@ -4,46 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>the unworld cup</title>
-<!-- Firebase Realtime Database — replace with your own config from console.firebase.google.com -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+<!-- Firebase Realtime Database -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2XngHSIcP-A6_ebpEZR4LyZNJ5mz01LM",
+    authDomain: "unworldcup.firebaseapp.com",
+    databaseURL: "https://unworldcup-default-rtdb.firebaseio.com",
+    projectId: "unworldcup",
+    storageBucket: "unworldcup.firebasestorage.app",
+    messagingSenderId: "666050004526",
+    appId: "1:666050004526:web:54f2973452797e0b6581bf"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const _fbDb  = firebase.database();
+  const _fbRef = _fbDb.ref('league');
 
-  // !! REPLACE THIS with your Firebase project config !!
-const firebaseConfig = {
-  apiKey: "AIzaSyD2XngHSIcP-A6_ebpEZR4LyZNJ5mz01LM",
-  authDomain: "unworldcup.firebaseapp.com",
-  databaseURL: "https://unworldcup-default-rtdb.firebaseio.com",
-  projectId: "unworldcup",
-  storageBucket: "unworldcup.firebasestorage.app",
-  messagingSenderId: "666050004526",
-  appId: "1:666050004526:web:54f2973452797e0b6581bf"
-};
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-  const db = getDatabase(app);
-  const leagueRef = ref(db, 'league');
-
-  // Expose to global scope for the rest of the script
-  window._fbRef = leagueRef;
-  window._fbSet = set;
-
-  // Listen for remote changes and update UI
-  onValue(leagueRef, (snapshot) => {
+  // Listen for remote changes — guarded so it only fires after main script is ready
+  _fbRef.on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-      // Preserve local session state, merge in remote league data
-      const myTeamId = sessionStorage.getItem('uwc_myteam');
-      state = data;
-      if (!state.draftedBy) state.draftedBy = {};
-      if (!state.games) state.games = [];
-      if (!state.teams) state.teams = [];
-      if (!state.stats) state.stats = window._defaultStats();
-      if (!state.roundNum) state.roundNum = 0;
-      render();
-    }
+    if (!data) return;
+    if (typeof window.state === 'undefined') return; // main script not ready yet
+    window.state = data;
+    if (!window.state.draftedBy) window.state.draftedBy = {};
+    if (!window.state.games)     window.state.games     = [];
+    if (!window.state.teams)     window.state.teams     = [];
+    if (!window.state.players)   window.state.players   = [];
+    if (!window.state.stats)     window.state.stats     = [];
+    if (!window.state.roundNum)  window.state.roundNum  = 0;
+    if (typeof window.render === 'function') window.render();
   });
+
+  // Save to Firebase — compat SDK accepts arrays fine
+  window._fbSave = function(stateObj) {
+    _fbRef.set(stateObj).catch(e => console.warn('Firebase save error:', e));
+  };
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap');
@@ -479,7 +475,9 @@ const DEFAULT_STATE = {
 
 let state = {};
 let playerFilter = 'all';
-let draftFilter = 'all';
+let draftFilter  = 'all';
+// expose for Firebase callback
+Object.defineProperty(window, 'state', { get: () => state, set: v => { state = v; } });
 
 function loadState() {
   // Try localStorage first (fallback / offline)
@@ -503,18 +501,17 @@ function loadState() {
 }
 
 function saveState() {
-  // Save to localStorage always
+  // Save to localStorage always (instant, offline-safe)
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
-  // Save to Firebase if available (makes it shared across users)
-  if (window._fbRef && window._fbSet) {
-    window._fbSet(window._fbRef, state).catch(()=>{});
+  // Save to Firebase if available
+  if (typeof window._fbSave === 'function') {
+    window._fbSave(state);
   }
 }
 
-// Real-time sync is handled by Firebase onValue listener above.
-// localStorage polling kept as fallback for same-device multi-tab use only.
+// localStorage polling — fallback for same-device multi-tab when Firebase unavailable
 setInterval(() => {
-  if (window._fbRef) return; // Firebase handles it
+  if (window._fbSave) return; // Firebase handles live sync
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) { state = JSON.parse(raw); render(); }
@@ -554,6 +551,7 @@ function render() {
     t.innerHTML = p[0] + ' <span>' + p.slice(1).join(' ') + '</span>';
   }
 }
+window.render = render; // expose for Firebase callback
 
 function updateTicker() {
   const el = document.getElementById('ticker'); if (!el) return;
@@ -561,7 +559,7 @@ function updateTicker() {
   const mid = state.players.filter(p=>p.pos==='midfielder').length;
   const def = state.players.filter(p=>p.pos==='defender').length;
   const gk = state.players.filter(p=>p.pos==='goalie').length;
-  const fb = window._fbRef ? ' // firebase: live' : ' // offline mode';
+  const fb = window._fbSave ? ' // firebase: live' : ' // offline mode';
   el.textContent = `// ${state.players.length} players (${atk} atk / ${mid} mid / ${def} def / ${gk} gk) // ${state.teams.length} teams // ${state.leagueName||'unworld cup'}${fb}`;
 }
 
