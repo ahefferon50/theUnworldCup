@@ -1,45 +1,50 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>the unworld cup</title>
-<!-- Firebase Realtime Database -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyD2XngHSIcP-A6_ebpEZR4LyZNJ5mz01LM",
-    authDomain: "unworldcup.firebaseapp.com",
-    databaseURL: "https://unworldcup-default-rtdb.firebaseio.com",
-    projectId: "unworldcup",
-    storageBucket: "unworldcup.firebasestorage.app",
-    messagingSenderId: "666050004526",
-    appId: "1:666050004526:web:54f2973452797e0b6581bf"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const _fbDb  = firebase.database();
-  const _fbRef = _fbDb.ref('league');
+<!-- Firebase Realtime Database — replace with your own config from console.firebase.google.com -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // Listen for remote changes — guarded so it only fires after main script is ready
-  _fbRef.on('value', (snapshot) => {
+  // !! REPLACE THIS with your Firebase project config !!
+const firebaseConfig = {
+  apiKey: "AIzaSyD2XngHSIcP-A6_ebpEZR4LyZNJ5mz01LM",
+  authDomain: "unworldcup.firebaseapp.com",
+  databaseURL: "https://unworldcup-default-rtdb.firebaseio.com",
+  projectId: "unworldcup",
+  storageBucket: "unworldcup.firebasestorage.app",
+  messagingSenderId: "666050004526",
+  appId: "1:666050004526:web:54f2973452797e0b6581bf"
+};
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+  const db = getDatabase(app);
+  const leagueRef = ref(db, 'league');
+
+  // Expose to global scope for the rest of the script
+  window._fbRef = leagueRef;
+  window._fbSet = set;
+
+  // Listen for remote changes and update UI
+  onValue(leagueRef, (snapshot) => {
     const data = snapshot.val();
-    if (!data) return;
-    if (typeof window.state === 'undefined') return; // main script not ready yet
-    window.state = data;
-    if (!window.state.draftedBy) window.state.draftedBy = {};
-    if (!window.state.games)     window.state.games     = [];
-    if (!window.state.teams)     window.state.teams     = [];
-    if (!window.state.players)   window.state.players   = [];
-    if (!window.state.stats)     window.state.stats     = [];
-    if (!window.state.roundNum)  window.state.roundNum  = 0;
-    if (typeof window.render === 'function') window.render();
+    if (data) {
+      // Preserve local session state, merge in remote league data
+      const myTeamId = sessionStorage.getItem('uwc_myteam');
+      state = data;
+      if (!state.draftedBy) state.draftedBy = {};
+      if (!state.games) state.games = [];
+      if (!state.teams) state.teams = [];
+      if (!state.stats) state.stats = window._defaultStats();
+      if (!state.roundNum) state.roundNum = 0;
+      render();
+    }
   });
-
-  // Save to Firebase — compat SDK accepts arrays fine
-  window._fbSave = function(stateObj) {
-    _fbRef.set(stateObj).catch(e => console.warn('Firebase save error:', e));
-  };
 </script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap');
@@ -475,9 +480,7 @@ const DEFAULT_STATE = {
 
 let state = {};
 let playerFilter = 'all';
-let draftFilter  = 'all';
-// expose for Firebase callback
-Object.defineProperty(window, 'state', { get: () => state, set: v => { state = v; } });
+let draftFilter = 'all';
 
 function loadState() {
   // Try localStorage first (fallback / offline)
@@ -501,22 +504,23 @@ function loadState() {
 }
 
 function saveState() {
-  // Save to localStorage always (instant, offline-safe)
+  // Save to localStorage always
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
-  // Save to Firebase if available
-  if (typeof window._fbSave === 'function') {
-    window._fbSave(state);
+  // Save to Firebase if available (makes it shared across users)
+  if (window._fbRef && window._fbSet) {
+    window._fbSet(window._fbRef, state).catch(()=>{});
   }
 }
 
-// localStorage polling — fallback for same-device multi-tab when Firebase unavailable
+// Real-time sync is handled by Firebase onValue listener above.
+// localStorage polling kept as fallback for same-device multi-tab use only.
 setInterval(() => {
-  if (window._fbSave) return; // Firebase handles live sync
+  if (window._fbRef) return; // Firebase handles it
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) { state = JSON.parse(raw); render(); }
   } catch(e) {}
-}, 50000);
+}, 5000);
 
 function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
@@ -537,6 +541,37 @@ function canDraft(teamId, pos) {
   return rosterCountsFor(teamId)[pos] < (ROSTER_SLOTS[pos]||0);
 }
 
+const BUDGET = 100;
+
+function _pidHash(pid) {
+  let h = 0;
+  for (let i = 0; i < pid.length; i++) h = (h * 31 + pid.charCodeAt(i)) & 0xffffffff;
+  return Math.abs(h) % 20000;
+}
+
+function playerValue(p) {
+  // owner can override with a custom value stored on the player object
+  if (p.customValue !== undefined && p.customValue !== null && p.customValue !== '') {
+    return +p.customValue;
+  }
+  const sc = calcScore(p);
+  const starCount = Math.max(1, Math.round((sc / 100) * 5));
+  const tierBase = starCount * 5;
+  const variance = (_pidHash(p.id) / 20000) * 20 - 10; // ±$10M
+  return Math.round(Math.min(35, Math.max(1, tierBase + variance)) * 10) / 10;
+}
+
+function teamSpent(teamId) {
+  return Object.entries(state.draftedBy)
+    .filter(([pid, tid]) => tid === teamId)
+    .reduce((sum, [pid]) => {
+      const p = state.players.find(pl => pl.id === pid);
+      return sum + (p ? playerValue(p) : 0);
+    }, 0);
+}
+
+function fmtVal(v) { return `$${(+v).toFixed(1)}M`; }
+
 function render() {
   updateTicker();
   renderPlayers();
@@ -551,7 +586,6 @@ function render() {
     t.innerHTML = p[0] + ' <span>' + p.slice(1).join(' ') + '</span>';
   }
 }
-window.render = render; // expose for Firebase callback
 
 function updateTicker() {
   const el = document.getElementById('ticker'); if (!el) return;
@@ -559,7 +593,7 @@ function updateTicker() {
   const mid = state.players.filter(p=>p.pos==='midfielder').length;
   const def = state.players.filter(p=>p.pos==='defender').length;
   const gk = state.players.filter(p=>p.pos==='goalie').length;
-  const fb = window._fbSave ? ' // firebase: live' : ' // offline mode';
+  const fb = window._fbRef ? ' // firebase: live' : ' // offline mode';
   el.textContent = `// ${state.players.length} players (${atk} atk / ${mid} mid / ${def} def / ${gk} gk) // ${state.teams.length} teams // ${state.leagueName||'unworld cup'}${fb}`;
 }
 
@@ -587,7 +621,7 @@ function renderPlayers() {
     const tm = tid ? state.teams.find(t=>t.id===tid) : null;
     const el = document.createElement('div');
     el.className = 'pc';
-    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span>${tm ? ' // <span style="color:var(--fg3)">'+tm.name+'</span>' : ''}</div><div class="pst">${stars(sc)}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}`;
+    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span>${tm ? ' // <span style="color:var(--fg3)">'+tm.name+'</span>' : ''}</div><div class="pst">${stars(sc)}</div><div style="font-size:11px;color:var(--warn);margin-bottom:4px">${fmtVal(playerValue(p))}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}`;
     g.appendChild(el);
   });
 }
@@ -597,7 +631,6 @@ function renderDraft() {
   const g = document.getElementById('draftGrid');
   if (!top || !g) return;
 
-  // Check if user has a team stored in sessionStorage
   const myTeamId = sessionStorage.getItem('uwc_myteam');
   const myTeam = myTeamId ? state.teams.find(t=>t.id===myTeamId) : null;
 
@@ -607,12 +640,13 @@ function renderDraft() {
         ${state.teams.length ? state.teams.map(t=>{
           const counts = rosterCountsFor(t.id);
           const total = Object.values(counts).reduce((a,b)=>a+b,0);
+          const rem = Math.max(0, BUDGET - teamSpent(t.id));
           return `<div class="team-list-card" style="cursor:pointer;flex-direction:column;align-items:flex-start" onclick="claimTeam('${t.id}')">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
               ${(t.colors||['#888']).map(c=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c}"></span>`).join('')}
               <span style="font-weight:700">${t.name}</span>
             </div>
-            <div style="font-size:10px;color:var(--fg3)">${total}/7 players drafted</div>
+            <div style="font-size:10px;color:var(--fg3)">${total}/7 players &nbsp;|&nbsp; $${rem.toFixed(1)}M left</div>
           </div>`;
         }).join('') : '<div class="notice" style="grid-column:1/-1">no teams yet — create one in the teams tab</div>'}
       </div>`;
@@ -621,29 +655,47 @@ function renderDraft() {
   }
 
   const counts = rosterCountsFor(myTeam.id);
-  const total = Object.values(counts).reduce((a,b)=>a+b,0);
-  top.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-    <span class="pill live">managing: ${myTeam.name}</span>
-    <span style="color:var(--fg2);font-size:11px">roster: ${total}/7 &nbsp;|&nbsp; <span class="pos-atk">atk ${counts.attacker}/2</span> &nbsp;<span class="pos-mid">mid ${counts.midfielder}/2</span> &nbsp;<span class="pos-def">def ${counts.defender}/2</span> &nbsp;<span class="pos-gk">gk ${counts.goalie}/1</span></span>
-    <button style="margin-left:auto;padding:4px 10px;font-size:10px" onclick="sessionStorage.removeItem('uwc_myteam');renderDraft()">switch team</button>
+  const rosterTotal = Object.values(counts).reduce((a,b)=>a+b,0);
+  const spent = teamSpent(myTeam.id);
+  const remaining = Math.max(0, BUDGET - spent);
+  const pct = Math.min(100, (spent / BUDGET) * 100);
+  const budgetColor = remaining < 10 ? 'var(--danger)' : remaining < 25 ? 'var(--warn)' : 'var(--good)';
+
+  top.innerHTML = `<div style="margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <span class="pill live">managing: ${myTeam.name}</span>
+      <span style="color:var(--fg2);font-size:11px">roster: ${rosterTotal}/7 &nbsp;|&nbsp; <span class="pos-atk">atk ${counts.attacker}/2</span> &nbsp;<span class="pos-mid">mid ${counts.midfielder}/2</span> &nbsp;<span class="pos-def">def ${counts.defender}/2</span> &nbsp;<span class="pos-gk">gk ${counts.goalie}/1</span></span>
+      <button style="margin-left:auto;padding:4px 10px;font-size:10px" onclick="sessionStorage.removeItem('uwc_myteam');renderDraft()">switch team</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${budgetColor};transition:width .3s"></div>
+      </div>
+      <div style="font-size:12px;white-space:nowrap">
+        <span style="color:${budgetColor};font-weight:700">$${remaining.toFixed(1)}M</span>
+        <span style="color:var(--fg3)"> remaining of $${BUDGET}M</span>
+      </div>
+    </div>
   </div>`;
 
   g.innerHTML = '';
   const drafted = new Set(Object.keys(state.draftedBy));
   const list = draftFilter==='all' ? state.players : state.players.filter(p=>p.pos===draftFilter);
 
-  // Only show undrafted players, or players on this team
   list.filter(p => !drafted.has(p.id) || state.draftedBy[p.id]===myTeam.id).forEach(p => {
     const mine = state.draftedBy[p.id] === myTeam.id;
     const sc = calcScore(p);
+    const val = playerValue(p);
     const slotFull = !canDraft(myTeam.id, p.pos);
+    const tooExpensive = !mine && (remaining - val) < -0.05;
     const el = document.createElement('div');
-    el.className = 'pc' + (mine ? ' sel' : '');
+    el.className = 'pc' + (mine ? ' sel' : '') + (tooExpensive ? ' drafted' : '');
     let btn = '';
-    if (mine) btn = `<button class="danger" style="margin-top:8px;width:100%" onclick="undraft('${p.id}')">release</button>`;
-    else if (!slotFull) btn = `<button class="good" style="margin-top:8px;width:100%" onclick="draft('${p.id}')">draft</button>`;
-    else btn = `<div class="pill w" style="margin-top:8px">${p.pos} full</div>`;
-    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span></div><div class="pst">${stars(sc)}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}${btn}`;
+    if (mine)              btn = `<button class="danger" style="margin-top:8px;width:100%" onclick="undraft('${p.id}')">release (+${fmtVal(val)})</button>`;
+    else if (tooExpensive) btn = `<div class="pill w" style="margin-top:8px">too expensive</div>`;
+    else if (slotFull)     btn = `<div class="pill w" style="margin-top:8px">${p.pos} full</div>`;
+    else                   btn = `<button class="good" style="margin-top:8px;width:100%" onclick="draft('${p.id}')">draft (${fmtVal(val)})</button>`;
+    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span></div><div class="pst">${stars(sc)}</div><div style="font-size:12px;color:var(--warn);font-weight:700;margin-bottom:4px">${fmtVal(val)}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}${btn}`;
     g.appendChild(el);
   });
   if (!g.children.length) g.innerHTML = '<div class="notice" style="grid-column:1/-1">all available players drafted</div>';
@@ -660,6 +712,8 @@ function draft(pid) {
   if (!myTeam) return;
   const p = state.players.find(pl=>pl.id===pid); if (!p) return;
   if (!canDraft(myTeam.id, p.pos)) return;
+  const remaining = BUDGET - teamSpent(myTeam.id);
+  if (playerValue(p) > remaining + 0.05) return;
   state.draftedBy[pid] = myTeam.id;
   saveState(); renderDraft(); renderPlayers();
 }
@@ -687,6 +741,8 @@ function renderTeams() {
       const dots = (t.colors||['#888']).map(c=>`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:3px"></span>`).join('');
       const isMine = myTeamId === t.id;
 
+      const tactic = t.tactic || 'bal';
+
       function rosterSection(players, max, label, cls) {
         let out = `<div style="margin-bottom:10px"><div class="slot-label ${cls}">${label} (${players.length}/${max})</div><div class="slot-grid${max===1?' one':''}">`;
         for (let i=0;i<max;i++) {
@@ -706,6 +762,14 @@ function renderTeams() {
           ${isMine ? '<span class="pill live" style="margin-left:auto">your team</span>' : ''}
         </div>
         ${t.motto ? `<div style="font-size:11px;color:var(--fg3);margin-bottom:12px;font-style:italic">"${t.motto}"</div>` : ''}
+        ${isMine ? `<div style="margin-bottom:14px">
+          <div class="slabel" style="margin-bottom:8px">team tactics <span style="font-size:9px;color:var(--fg3);letter-spacing:.05em;text-transform:none">(hidden from other teams)</span></div>
+          <div style="display:flex;gap:6px">
+            <button onclick="setTactic('${t.id}','atk')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid ${tactic==='atk'?'#ff8844':'var(--border)'};background:${tactic==='atk'?'#1a0f00':'none'};color:${tactic==='atk'?'#ff8844':'var(--fg3)'};text-align:center;transition:all .12s">⚔ attacking<br><span style="font-size:9px;opacity:.7">atk +30% · def –20%</span></button>
+            <button onclick="setTactic('${t.id}','bal')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid ${tactic==='bal'?'var(--fg)':'var(--border)'};background:${tactic==='bal'?'#111':'none'};color:${tactic==='bal'?'var(--fg)':'var(--fg3)'};text-align:center;transition:all .12s">⚖ balanced<br><span style="font-size:9px;opacity:.7">no modifiers</span></button>
+            <button onclick="setTactic('${t.id}','def')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid ${tactic==='def'?'#44ccff':'var(--border)'};background:${tactic==='def'?'#001a1a':'none'};color:${tactic==='def'?'#44ccff':'var(--fg3)'};text-align:center;transition:all .12s">🛡 defensive<br><span style="font-size:9px;opacity:.7">def +30% · atk –20%</span></button>
+          </div>
+        </div>` : ''}
         ${rosterSection(atk,2,'attackers','atk')}
         ${rosterSection(mid,2,'midfielders','mid')}
         ${rosterSection(def,2,'defenders','def')}
@@ -722,6 +786,14 @@ function renderTeams() {
 function claimTeamAndGoDraft(id) {
   sessionStorage.setItem('uwc_myteam', id);
   switchTab('draft');
+}
+
+function setTactic(teamId, tactic) {
+  const idx = state.teams.findIndex(t => t.id === teamId);
+  if (idx < 0) return;
+  state.teams[idx].tactic = tactic;
+  saveState();
+  renderTeams();
 }
 
 // track which rounds are collapsed (collapsed by default after round 1)
@@ -868,6 +940,10 @@ function renderPlayerEditor() {
     <div class="erow"><div class="elabel">name</div><input type="text" value="${p.name}" onchange="state.players[${pi}].name=this.value"></div>
     <div class="erow"><div class="elabel">position</div><select onchange="state.players[${pi}].pos=this.value"><option value="attacker"${p.pos==='attacker'?' selected':''}>attacker</option><option value="midfielder"${p.pos==='midfielder'?' selected':''}>midfielder</option><option value="defender"${p.pos==='defender'?' selected':''}>defender</option><option value="goalie"${p.pos==='goalie'?' selected':''}>goalie</option></select></div>
     ${state.stats.map(s=>`<div class="erow"><div class="elabel">${s.name}</div><input type="number" min="0" max="100" value="${p[s.id]||0}" onchange="state.players[${pi}]['${s.id}']=+this.value"></div>`).join('')}
+    <div class="erow">
+      <div class="elabel">value ($M) <span style="font-size:9px;color:var(--fg3)">auto: ${fmtVal(playerValue(p))}</span></div>
+      <input type="number" min="1" max="100" step="0.5" placeholder="${playerValue(p).toFixed(1)}" value="${p.customValue!==undefined&&p.customValue!==''?p.customValue:''}" onchange="state.players[${pi}].customValue=this.value===''?undefined:+this.value">
+    </div>
     <div class="brow"><button class="danger" onclick="removePlayer(${pi})">remove</button></div>
   </div>`).join('');
 }
@@ -1025,14 +1101,23 @@ function runSim() {
       const hR = hRaw.map(p => applyWeather(p, weather, state.players));
       const aR = aRaw.map(p => applyWeather(p, weather, state.players));
 
-      const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
-      const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-      const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-      const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
-      const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
-      const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-      const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-      const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+      // Tactic multipliers — hidden from opponents, applied here
+      const hTac = h.tactic || 'bal';
+      const aTac = a.tactic || 'bal';
+      const tm = (tac, role) => {
+        if (tac === 'atk') return (role==='attacker'||role==='midfielder') ? 1.3 : 0.8;
+        if (tac === 'def') return (role==='defender' ||role==='goalie')    ? 1.3 : 0.8;
+        return 1.0;
+      };
+
+      const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p)*tm(hTac,'attacker'),0);
+      const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p)*tm(hTac,'midfielder'),0);
+      const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p)*tm(hTac,'defender'),0);
+      const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p)*tm(hTac,'goalie'),0);
+      const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p)*tm(aTac,'attacker'),0);
+      const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p)*tm(aTac,'midfielder'),0);
+      const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p)*tm(aTac,'defender'),0);
+      const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p)*tm(aTac,'goalie'),0);
 
       const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20;
       const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
