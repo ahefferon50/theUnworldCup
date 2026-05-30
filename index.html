@@ -516,7 +516,7 @@ setInterval(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) { state = JSON.parse(raw); render(); }
   } catch(e) {}
-}, 5000);
+}, 50000);
 
 function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
