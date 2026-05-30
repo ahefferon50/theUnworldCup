@@ -22,7 +22,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-  const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const leagueRef = ref(db, 'league');
 
@@ -520,7 +519,7 @@ setInterval(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) { state = JSON.parse(raw); render(); }
   } catch(e) {}
-}, 50000);
+}, 5000);
 
 function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
