@@ -264,8 +264,8 @@ const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has 
 
 const VERBS_ATK = ['struck','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
 const VERBS_GK  = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to','Ate'];
-const verbs_Def = ['fucking nutted','deleted from the world','blocked','refused to block','dedended','stopped'];
-const VERBS_MID = ['controlled the space around','imposed order upon','redistributed the chaos near','threaded through','quietly dominated','refused to yield ground to','made themselves very large near','narrated proceedings from the centre against'];
+const verbs_Def = ['fucking nutted','deleted from the world','blocked','refused to block','dedended','stopped','angered','bled out'];
+const VERBS_MID = ['controlled the space around','imposed order upon','redistributed the chaos near','threaded through','quietly dominated','refused to yield ground to','made themselves very large near','narrated proceedings from the centre against''betrayed a certain animalistic fury'];
 
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function roll(p){ return Math.random() < p; }
@@ -344,6 +344,7 @@ function generateReport(game) {
   // ── atmospheric pool ─────────────────────────────────────────────────────
   const atmPool = [
     `The match was played at the correct time. This was later noted as unusual.`,
+    `The match was played thirty minutes early. This was described by all involved as most excellent.`,
     `A penalty was not awarded. Whether one should have been remains, officially, an open question.`,
     `The referee added four minutes of stoppage time and then, without explanation, subtracted two.`,
     `An injury was treated on the pitch for six minutes. The player involved returned and was not thereafter visible.`,
@@ -355,14 +356,16 @@ function generateReport(game) {
     `The away manager was seen consulting a document during the second half. The document appeared to be blank.`,
     `Neither coach made a substitution. Sources close to the bench say neither coach acknowledged the option existed.`,
     `A figure in a long coat occupied the away dugout for the final twenty minutes. The club has not confirmed who this was.`,
-    `The home manager, when asked about the result post-match, said only: "yes."`,
+    `The home manager, when asked about the result post-match, said only: "I do not belive in your reality scum."`,
     `Attendance was recorded as either four thousand or one. The discrepancy has not been explained.`,
     `The away supporters sang a song that witnesses describe as "familiar, but wrong."`,
     `Row J was empty at kickoff. By half time it was full. No one in row J has been interviewed.`,
-    `Someone in the crowd knew what was going to happen. This was noted and not followed up.`,
-    `The stadium announcer mispronounced every name and did not correct any of them.`,
+    `Someone in the crowd mumbled all of the events in match three seconds before they happened under his breath. This was noted and not followed up.`,
+    `The stadium announcer mispronounced every name.`,
     `The fourth official's notes were later found to be written in a language no one recognised.`,
     `The tunnel was longer after the match than it had been before.`,
+    `Celeberities attending the match include, Anne Hathaway, Tom Hiddelston, and Ghengis Khan.`,
+
   ];
 
   const potmIntros = ['Player of the match, by general and uncomfortable consensus, was','Officials later designated the standout performance as belonging to','Those keeping records noted one name above all others:','Whatever happened here, it happened most noticeably around','If one player was to be held responsible for the shape of this result, sources suggest it was'];
