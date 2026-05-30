@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,17 +10,17 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-   // !! REPLACE THIS with your Firebase project config !!
-const firebaseConfig = {
-  apiKey: "AIzaSyD2XngHSIcP-A6_ebpEZR4LyZNJ5mz01LM",
-  authDomain: "unworldcup.firebaseapp.com",
-  databaseURL: "https://unworldcup-default-rtdb.firebaseio.com",
-  projectId: "unworldcup",
-  storageBucket: "unworldcup.firebasestorage.app",
-  messagingSenderId: "666050004526",
-  appId: "1:666050004526:web:54f2973452797e0b6581bf"
-};
-  
+  // !! REPLACE THIS with your Firebase project config !!
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "Unworldcup.firebaseapp.com",
+    databaseURL: "https://unworldcup-default-rtdb.firebaseio.com/",
+    projectId: "Unworldcup",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const leagueRef = ref(db, 'league');
@@ -256,138 +257,26 @@ const STORAGE_KEY = 'unworldcup_v1';
 const COLORS = ['#ff4444','#ff8844','#ffcc44','#44ff88','#44ccff','#8844ff','#ff44cc','#e8e8e8','#888888'];
 const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 
-const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","Resign yourself to be the fool you are.","O the moon shone bright on Mrs. Porter and on her daughter."];
-
-const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names.","The away team bus arrived. The away team had not been on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff.","The player saw a red mist, but he was able to be sucessfully caught and put down before anyone else was hurt","There is trouble here, it is thick on the ground"];
-
+const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
+const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names.","The away team bus arrived. The away team had not been on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
 const VERBS_ATK = ['struck','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
-const VERBS_GK  = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to','Ate'];
-const verbs_Def = ['fucking nutted','deleted from the world','blocked','refused to block','dedended','stopped','handled','stopped','consumed','intimidated with his threatening aura'];
-const VERBS_MID = ['controlled the space around','imposed order upon','handled','redistributed the chaos near','absolutely bossed it','threaded through','quietly dominated','refused to yield ground to','made themselves very large near','narrated proceedings from the centre against'];
+const VERBS_GK = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to','Ate',];
+const verbs_Def = ['fucking nutted', 'deleted from the world', 'blocked', 'refused to block', 'dedended', 'stopped']
 
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function roll(p){ return Math.random() < p; }
-function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr; }
 
 function generateReport(game) {
   const hR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.homeId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
   const aR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.awayId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-  const all = [...hR,...aR];
+  const scorer = hR.filter(p=>p.pos==='attacker')[0] || hR[0] || null;
+  const keeper = aR.filter(p=>p.pos==='goalie')[0] || null;
+  const defender = aR.filter(p=>p.pos==='defender')[0] || null;
 
-  const hAtk = hR.filter(p=>p.pos==='attacker');
-  const aAtk = aR.filter(p=>p.pos==='attacker');
-  const hDef = hR.filter(p=>p.pos==='defender');
-  const aDef = aR.filter(p=>p.pos==='defender');
-  const hMid = hR.filter(p=>p.pos==='midfielder');
-  const aMid = aR.filter(p=>p.pos==='midfielder');
-  const hGk  = hR.filter(p=>p.pos==='goalie');
-  const aGk  = aR.filter(p=>p.pos==='goalie');
-  const min  = () => Math.floor(Math.random()*85)+5;
-
-  // ── attacker pool ────────────────────────────────────────────────────────
-  const atkPool = [];
-  if (hAtk.length && aGk.length)
-    atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} a goal in the ${min()}th minute; ${rnd(aGk).name} ${rnd(VERBS_GK)} two subsequent attempts before the ground shifted.`);
-  if (hAtk.length && aGk.length)
-    atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} in the ${min()}th. ${rnd(aGk).name} ${rnd(VERBS_GK)} everything that followed.`);
-  if (hAtk.length)
-    atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} the only goal of the half, which officials later described as "probable".`);
-  if (hAtk.length)
-    atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} twice. Both are listed in the match report under different categories.`);
-  if (aAtk.length && hGk.length)
-    atkPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} from range in the ${min()}th; ${rnd(hGk).name} ${rnd(VERBS_GK)} the follow-up.`);
-  if (aAtk.length)
-    atkPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} an attempt that was ruled ${roll(0.5)?'valid':'inconclusive'}.`);
-  if (aAtk.length && hGk.length)
-    atkPool.push(`${rnd(aAtk).name} bore down on goal; ${rnd(hGk).name} ${rnd(VERBS_GK)} the attempt and stood very still afterwards.`);
-  if (hAtk.length && aAtk.length)
-    atkPool.push(`${rnd(hAtk).name} and ${rnd(aAtk).name} each had efforts in the ${min()}th. One was counted. The other was not addressed.`);
-  if (!atkPool.length)
-    atkPool.push(`The match proceeded. Causality was maintained, more or less.`);
-
-  // ── defender pool ────────────────────────────────────────────────────────
-  const defPool = [];
-  if (aDef.length && hAtk.length)
-    defPool.push(`${rnd(aDef).name} ${rnd(verbs_Def)} ${rnd(hAtk).name} in the ${min()}th, which briefly altered the shape of the game.`);
-  if (aDef.length)
-    defPool.push(`${rnd(aDef).name} ${rnd(verbs_Def)} an advance that had seemed, until that point, unstoppable.`);
-  if (hDef.length && aAtk.length)
-    defPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} ${rnd(aAtk).name} in the ${min()}th. The attempt was not spoken of again.`);
-  if (hDef.length)
-    defPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} the approach entirely. The approach has not commented.`);
-  if (hDef.length && aAtk.length)
-    defPool.push(`${rnd(aAtk).name} was ${rnd(verbs_Def)} by ${rnd(hDef).name} before reaching the area. What happened in that corridor of grass has not been fully established.`);
-  if (aDef.length && hDef.length)
-    defPool.push(`${rnd(aDef).name} and ${rnd(hDef).name} contested the edge of the area. Neither has described the experience publicly.`);
-  if (aGk.length)
-    defPool.push(`${rnd(aGk).name} ${rnd(VERBS_GK)} three attempts in the ${min()}th minute alone.`);
-  if (hGk.length)
-    defPool.push(`${rnd(hGk).name} ${rnd(VERBS_GK)} what would have been the equaliser. The crowd did not react immediately.`);
-
-  // ── midfielder pool ──────────────────────────────────────────────────────
-  const midPool = [];
-  if (hMid.length)
-    midPool.push(`${rnd(hMid).name} ${rnd(VERBS_MID)} the opposing midfield for a period officials estimated at most of the second half.`);
-  if (aMid.length)
-    midPool.push(`${rnd(aMid).name} ${rnd(VERBS_MID)} the centre before being replaced by something less legible.`);
-  if (hMid.length && aMid.length)
-    midPool.push(`${rnd(hMid).name} and ${rnd(aMid).name} ${rnd(VERBS_MID)} each other for the duration. Neither has described the experience publicly.`);
-  if (hMid.length)
-    midPool.push(`${rnd(hMid).name} ${rnd(VERBS_MID)} the lines, creating three chances each ruled to have occurred at the wrong time.`);
-  if (aMid.length && hAtk.length)
-    midPool.push(`${rnd(aMid).name} ${rnd(VERBS_MID)} the supply to ${rnd(hAtk).name} for long stretches of the second half.`);
-  if (hMid.length && aDef.length)
-    midPool.push(`${rnd(hMid).name} ${rnd(VERBS_MID)} the defensive shape of ${rnd(aDef).name} in the ${min()}th. Something shifted.`);
-
-  // ── atmospheric pool ─────────────────────────────────────────────────────
-  const atmPool = [
-    `The match was played at the correct time. This was later noted as unusual.`,
-    `A penalty was not awarded. Whether one should have been remains, officially, an open question.`,
-    `The referee added four minutes of stoppage time and then, without explanation, subtracted two.`,
-    `An injury was treated on the pitch for six minutes. The player involved returned and was not thereafter visible.`,
-    `The corner flags were replaced at half time. The original flags were not recovered.`,
-    `The ball spent eleven minutes in the air during the second half. This is not a record but it is close.`,
-    `Both teams wore their correct kits. This was confirmed afterwards by a third party.`,
-    `A substitution was made in the ${min()}th minute that no one on either bench appeared to authorise.`,
-    `The home coach had not moved from the technical area since the 12th minute and did not appear to be breathing.`,
-    `The away manager was seen consulting a document during the second half. The document appeared to be blank.`,
-    `Neither coach made a substitution. Sources close to the bench say neither coach acknowledged the option existed.`,
-    `A figure in a long coat occupied the away dugout for the final twenty minutes. The club has not confirmed who this was.`,
-    `The home manager, when asked about the result post-match, said only: "yes."`,
-    `Attendance was recorded as either twenty thousand or one. The discrepancy has not been explained.`,
-    `The away supporters sang a song that witnesses describe as "familiar, but wrong."`,
-    `Row J was empty at kickoff. By half time it was full. No one in row J has been interviewed.`,
-    `Someone in the crowd knew what was going to happen. This was noted and not followed up.`,
-    `The stadium announcer mispronounced every name and did not correct any of them.`,
-    `The fourth official's notes were later found to be written in a language no one recognised.`,
-    `The tunnel was longer after the match than it had been before.`,
-    `It's  game of two halves, both of which involved canibalism unsettling.`,
-    'Goals win games. Goals win games. Goalz win Gamez. GOaLs Winnnn GaMES`,
-    `The pit that opened in the center of the match provided an interesting an lively obstacle.`,
-
-  ];
-
-  const potmIntros = ['Player of the match, by general and uncomfortable consensus, was','Officials later designated the standout performance as belonging to','Those keeping records noted one name above all others:','Whatever happened here, it happened most noticeably around','If one player was to be held responsible for the shape of this result, sources suggest it was', 'Who is to blame for all of this? Personally I point my finger at',];
-  const potmOutros = ['who declined to be interviewed.','who was not available for comment and has not been since.','whose post-match remarks were described as "consistent with someone who had played."','who left the pitch at the final whistle without looking back.','who was seen afterwards sitting alone in the car park for an indeterminate period.','who, when asked to describe the game, said it had occurred.','who smiled in a way that did not reach anywhere.','whose boots, recovered from the changing room, were facing the wrong direction.'];
-
-  // ── assemble ─────────────────────────────────────────────────────────────
-  const parts = [];
-
-  if (atkPool.length && roll(0.80)) parts.push(rnd(atkPool));
-  if (defPool.length && roll(0.65)) parts.push(rnd(defPool));
-  if (midPool.length && roll(0.60)) parts.push(rnd(midPool));
-  if (parts.length === 0 && all.length) parts.push(`${rnd(all).name} was present for the duration and has been noted as such.`);
-
-  if (all.length && roll(0.55)) parts.push(`${rnd(potmIntros)} ${rnd(all).name}, ${rnd(potmOutros)}`);
-  if (roll(0.50)) parts.push(rnd(atmPool));
-  if (roll(0.25)) parts.push(rnd(atmPool));
-  if (roll(0.70)) parts.push(`"${rnd(WASTELAND)}"`);
-
-  // shuffle everything, then conditionally append OMINOUS last at 30%
-  shuffle(parts);
-  if (roll(0.30)) parts.push(rnd(OMINOUS));
-
-  return parts.join(' ');
+  let s1 = '';
+  if (scorer && keeper) s1 = `${scorer.name} ${rnd(VERBS_ATK)} a goal in the ${Math.floor(Math.random()*85+5)}th minute; ${keeper.name} ${rnd(VERBS_GK)}.`;
+  else if (scorer) s1 = `${scorer.name} ${rnd(VERBS_ATK)}".`;
+  else s1 = `The match proceeded. Causality was maintained, more or less.`;
+  return `${s1} "${rnd(WASTELAND)}" ${rnd(OMINOUS)}`;
 }
 
 const RAW = [
@@ -1041,8 +930,8 @@ function runSim() {
 
       const g = {
         home: h.name, away: a.name, homeId: h.id, awayId: a.id,
-        homeScore: Math.max(0, Math.round(hPow/120)),
-        awayScore: Math.max(0, Math.round(aPow/120)),
+        homeScore: Math.max(0, Math.round(hPow/55)),
+        awayScore: Math.max(0, Math.round(aPow/55)),
         round: state.roundNum,
         weather: {
           name: weather.name,
@@ -1108,6 +997,14 @@ function saveTeam(isNew, existingId) {
 function closeModal() { document.getElementById('modalMount').innerHTML = ''; }
 
 function switchTab(name) {
+  if (name === 'owner') {
+    showOwnerPasswordModal();
+    return;
+  }
+  doSwitchTab(name);
+}
+
+function doSwitchTab(name) {
   document.querySelectorAll('.tc').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
@@ -1117,6 +1014,42 @@ function switchTab(name) {
   if (name==='owner') renderOwner();
   if (name==='league') renderLeague();
   if (name==='teams') renderTeams();
+}
+
+function showOwnerPasswordModal() {
+  const mount = document.getElementById('modalMount');
+  mount.innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="width:320px">
+      <div class="modal-title">owner access</div>
+      <div style="margin-bottom:14px;font-size:11px;color:var(--fg3)">enter the password to continue</div>
+      <input type="password" id="ownerPwInput" placeholder="password" style="margin-bottom:12px"
+        onkeydown="if(event.key==='Enter')checkOwnerPassword()">
+      <div id="ownerPwError" style="font-size:11px;color:var(--danger);margin-bottom:10px;display:none">incorrect password</div>
+      <div class="brow" style="margin-top:0">
+        <button class="primary" onclick="checkOwnerPassword()">enter</button>
+        <button onclick="closeModal()">cancel</button>
+      </div>
+    </div>
+  </div>`;
+  // focus the input after render
+  setTimeout(() => {
+    const inp = document.getElementById('ownerPwInput');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function checkOwnerPassword() {
+  const inp = document.getElementById('ownerPwInput');
+  if (!inp) return;
+  if (inp.value === 'scout') {
+    closeModal();
+    doSwitchTab('owner');
+  } else {
+    const err = document.getElementById('ownerPwError');
+    if (err) err.style.display = 'block';
+    inp.value = '';
+    inp.focus();
+  }
 }
 
 let ft;
