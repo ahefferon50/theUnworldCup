@@ -588,7 +588,29 @@ function render() {
 }
 
 function updateTicker() {
-  el.textContent = 'Why have thou forsaken us'
+  const el = document.getElementById('ticker'); 
+  if (!el) return;
+
+  const doomPhrases = [
+    " THE STARS ARE ALIGNING // THE DEEP ONES STIR //",
+    "// THAT IS NOT DEAD WHICH CAN ETERNAL LIE //",
+    "// THE UNWORLD CUP DEMANDS A DIFFERENT KIND OF SACRIFICE //",
+    "// PH'NGLUI MGLW'NAFH CTHULHU R'LYEH WGAH'NAGL FHTAGN //",
+    "// THE SKY BLEEDS A COLOR OUT OF SPACE //",
+    "// THEY ARE AWAKENING FROM THE SUNLESS ABYSS //",
+    "// THE REEFS OF THE DEEP ARE SILENT NO LONGER //",
+    "// THE ONE WHO WEARS PALLID MASK WATCHES THE PITCH //",
+    "// THE GROUND THUMPS WITH THE HEARTBEAT OF YOG-SOTHOTH //",
+    "// MADNESS IS THE ONLY SANITY LEFT TO THE SPECTATORS //",
+    "// THE FOOLS BELIEVE IT IS ONLY A GAME //",
+    "// CHANTING IN THE DARKNESS // THE BLACK GOAT WITH A THOUSAND YOUNG //"
+  ];
+
+  // Pick a random phrase from the list above
+  const randomIndex = Math.floor(Math.random() * doomPhrases.length);
+  
+  // Update the ticker text
+  el.textContent = doomPhrases[randomIndex];
 }
 
 function filterPlayers(f, btn) {
