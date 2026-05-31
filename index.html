@@ -202,6 +202,9 @@ button:disabled{opacity:.35;pointer-events:none}
 
   <div id="tab-league" class="tc">
     <div class="section">
+      <div class="slabel">upcoming schedule</div>
+      <div id="scheduleGrid"></div>
+      <div class="divider"></div>
       <div class="slabel">head-to-head results</div>
       <div class="h2h-wrap" id="h2hGrid"></div>
       <div class="divider"></div>
@@ -255,7 +258,8 @@ button:disabled{opacity:.35;pointer-events:none}
 
 <script>
 const STORAGE_KEY = 'unworldcup_v1';
-const COLORS = ['#ff4444','#ff8844','#ffcc44','#44ff88','#44ccff','#8844ff','#ff44cc','#e8e8e8','#888888'];
+const COLORS = ['#ff4444','#ff6a00','#ffcc44','#c8ff44','#44ff88','#44ffdd','#44ccff','#4488ff','#8844ff','#cc44ff','#ff44cc','#ffffff','#aaaaaa','#555555','#ff9999','#99ffcc','#99ddff'];
+const EMOJIS = ['🦊','🐺','🦁','🐯','🐻','🦝','🐗','🦌','🐢','🦅','🦉','🦇','🐙','🦑','🦈','🐊','🦎','👾','🌵','🔮'];
 const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 
 const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
@@ -550,24 +554,17 @@ function _pidHash(pid) {
 }
 
 function playerValue(p) {
-  // owner can override with a custom value stored on the player object
-  if (p.customValue !== undefined && p.customValue !== null && p.customValue !== '') {
-    return +p.customValue;
-  }
+  if (p.customValue !== undefined && p.customValue !== null && p.customValue !== '') return +p.customValue;
   const sc = calcScore(p);
   const starCount = Math.max(1, Math.round((sc / 100) * 5));
-  const tierBase = starCount * 5;
-  const variance = (_pidHash(p.id) / 20000) * 20 - 10; // ±$10M
-  return Math.round(Math.min(35, Math.max(1, tierBase + variance)) * 10) / 10;
+  const variance = (_pidHash(p.id) / 20000) * 20 - 10;
+  return Math.round(Math.min(35, Math.max(1, starCount * 5 + variance)) * 10) / 10;
 }
 
 function teamSpent(teamId) {
   return Object.entries(state.draftedBy)
     .filter(([pid, tid]) => tid === teamId)
-    .reduce((sum, [pid]) => {
-      const p = state.players.find(pl => pl.id === pid);
-      return sum + (p ? playerValue(p) : 0);
-    }, 0);
+    .reduce((sum, [pid]) => { const p = state.players.find(pl => pl.id === pid); return sum + (p ? playerValue(p) : 0); }, 0);
 }
 
 function fmtVal(v) { return `$${(+v).toFixed(1)}M`; }
@@ -588,30 +585,13 @@ function render() {
 }
 
 function updateTicker() {
-  const el = document.getElementById('ticker'); 
-  if (!el) return;
-
-  const doomPhrases = [
-    "// EX DURIS GLORIA //",
-    "// THAT IS NOT DEAD WHICH CAN ETERNAL LIE //",
-    "// كأس العالم للأمم المتحدة يتطلب نوعاً مختلفاً من التضحية//",
-    "// ここには神はいない、いるのはバラーだけだ//",
-    "// THE SKY BLEEDS A COLOR OUT OF SPACE //",
-    "// ते सूर्यहीनस्य अगाधात् जागरिताः भवन्ति //",
-    "// THE REEFS OF THE DEEP ARE SILENT NO LONGER //",
-    "// THE ONE WHO WEARS PALLID MASK WATCHES THE PITCH //",
-    "// THE GROUND THUMPS WITH THE HEARTBEAT OF YOG-SOTHOTH //",
-    "// MADNESS IS THE ONLY SANITY LEFT TO THE SPECTATORS //",
-    "// THE FOOLS BELIEVE IT IS ONLY A GAME //",
-    "// CHANTING IN THE DARKNESS // THE BLACK GOAT WITH A THOUSAND YOUNG //",
-    "//VIRI PIUM SACRIFICAT//"
-  ];
-
-  // Pick a random phrase from the list above
-  const randomIndex = Math.floor(Math.random() * doomPhrases.length);
-  
-  // Update the ticker text
-  el.textContent = doomPhrases[randomIndex];
+  const el = document.getElementById('ticker'); if (!el) return;
+  const atk = state.players.filter(p=>p.pos==='attacker').length;
+  const mid = state.players.filter(p=>p.pos==='midfielder').length;
+  const def = state.players.filter(p=>p.pos==='defender').length;
+  const gk = state.players.filter(p=>p.pos==='goalie').length;
+  const fb = window._fbRef ? ' // firebase: live' : ' // offline mode';
+  el.textContent = `// ${state.players.length} players (${atk} atk / ${mid} mid / ${def} def / ${gk} gk) // ${state.teams.length} teams // ${state.leagueName||'unworld cup'}${fb}`;
 }
 
 function filterPlayers(f, btn) {
@@ -660,7 +640,8 @@ function renderDraft() {
           const rem = Math.max(0, BUDGET - teamSpent(t.id));
           return `<div class="team-list-card" style="cursor:pointer;flex-direction:column;align-items:flex-start" onclick="claimTeam('${t.id}')">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              ${(t.colors||['#888']).map(c=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c}"></span>`).join('')}
+              <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${t.color||t.colors?.[0]||'#888'}"></span>
+              ${t.emoji?`<span style="font-size:13px">${t.emoji}</span>`:''}
               <span style="font-weight:700">${t.name}</span>
             </div>
             <div style="font-size:10px;color:var(--fg3)">${total}/7 players &nbsp;|&nbsp; $${rem.toFixed(1)}M left</div>
@@ -755,10 +736,9 @@ function renderTeams() {
       const mid = roster.filter(p=>p.pos==='midfielder');
       const def = roster.filter(p=>p.pos==='defender');
       const gk = roster.filter(p=>p.pos==='goalie');
-      const dots = (t.colors||['#888']).map(c=>`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:3px"></span>`).join('');
+      const teamColor = t.color || t.colors?.[0] || '#888';
+      const dots = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${teamColor};margin-right:3px"></span>${t.emoji?`<span style="font-size:16px;margin-right:4px">${t.emoji}</span>`:''}`;
       const isMine = myTeamId === t.id;
-
-      const tactic = t.tactic || 'bal';
 
       function rosterSection(players, max, label, cls) {
         let out = `<div style="margin-bottom:10px"><div class="slot-label ${cls}">${label} (${players.length}/${max})</div><div class="slot-grid${max===1?' one':''}">`;
@@ -779,14 +759,6 @@ function renderTeams() {
           ${isMine ? '<span class="pill live" style="margin-left:auto">your team</span>' : ''}
         </div>
         ${t.motto ? `<div style="font-size:11px;color:var(--fg3);margin-bottom:12px;font-style:italic">"${t.motto}"</div>` : ''}
-        ${isMine ? `<div style="margin-bottom:14px">
-          <div class="slabel" style="margin-bottom:8px">team tactics <span style="font-size:9px;color:var(--fg3);letter-spacing:.05em;text-transform:none">(hidden from other teams)</span></div>
-          <div style="display:flex;gap:6px">
-            <button onclick="setTactic('${t.id}','atk')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid ${tactic==='atk'?'#ff8844':'var(--border)'};background:${tactic==='atk'?'#1a0f00':'none'};color:${tactic==='atk'?'#ff8844':'var(--fg3)'};text-align:center;transition:all .12s">⚔ attacking<br><span style="font-size:9px;opacity:.7">atk +30% · def –20%</span></button>
-            <button onclick="setTactic('${t.id}','bal')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid ${tactic==='bal'?'var(--fg)':'var(--border)'};background:${tactic==='bal'?'#111':'none'};color:${tactic==='bal'?'var(--fg)':'var(--fg3)'};text-align:center;transition:all .12s">⚖ balanced<br><span style="font-size:9px;opacity:.7">no modifiers</span></button>
-            <button onclick="setTactic('${t.id}','def')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:1px solid ${tactic==='def'?'#44ccff':'var(--border)'};background:${tactic==='def'?'#001a1a':'none'};color:${tactic==='def'?'#44ccff':'var(--fg3)'};text-align:center;transition:all .12s">🛡 defensive<br><span style="font-size:9px;opacity:.7">def +30% · atk –20%</span></button>
-          </div>
-        </div>` : ''}
         ${rosterSection(atk,2,'attackers','atk')}
         ${rosterSection(mid,2,'midfielders','mid')}
         ${rosterSection(def,2,'defenders','def')}
@@ -805,14 +777,6 @@ function claimTeamAndGoDraft(id) {
   switchTab('draft');
 }
 
-function setTactic(teamId, tactic) {
-  const idx = state.teams.findIndex(t => t.id === teamId);
-  if (idx < 0) return;
-  state.teams[idx].tactic = tactic;
-  saveState();
-  renderTeams();
-}
-
 // track which rounds are collapsed (collapsed by default after round 1)
 const collapsedRounds = new Set();
 
@@ -823,6 +787,57 @@ function toggleRound(r) {
 }
 
 function renderLeague() {
+  // ── Schedule ────────────────────────────────────────────────────────────
+  const sg = document.getElementById('scheduleGrid');
+  if (sg) {
+    const teams = state.teams;
+    if (teams.length < 2) {
+      sg.innerHTML = '<div class="notice">need 2+ teams for a schedule</div>';
+    } else {
+      // Build or reuse schedule
+      const scheduleTeamIds = JSON.stringify((state.scheduleTeamIds||[]));
+      const currentTeamIds  = JSON.stringify(teams.map(t=>t.id));
+      let sched = state.schedule;
+      if (!sched || !sched.length || scheduleTeamIds !== currentTeamIds) {
+        sched = generateSchedule(teams);
+      }
+      const nextIdx = (state.scheduleRound || 0) % sched.length;
+      // Show next 3 rounds (or all if fewer)
+      const lookahead = Math.min(3, sched.length);
+      let schedHtml = '';
+      for (let i = 0; i < lookahead; i++) {
+        const idx = (nextIdx + i) % sched.length;
+        const slot = sched[idx];
+        const roundLabel = (state.roundNum||0) + i + 1;
+        const byeTeam = slot.byeId ? teams.find(t=>t.id===slot.byeId) : null;
+        const pairsHtml = slot.pairs.map(([hId,aId]) => {
+          const h = teams.find(t=>t.id===hId);
+          const a = teams.find(t=>t.id===aId);
+          if (!h||!a) return '';
+          const hColor = h.color||h.colors?.[0]||'#888';
+          const aColor = a.color||a.colors?.[0]||'#888';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+            <div style="flex:1;display:flex;align-items:center;gap:5px">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${hColor}"></span>
+              ${h.emoji?h.emoji+' ':''}${h.name}
+            </div>
+            <div style="font-size:10px;color:var(--fg3);padding:0 8px">vs</div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:5px">
+              ${a.emoji?a.emoji+' ':''}${a.name}
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${aColor}"></span>
+            </div>
+          </div>`;
+        }).join('');
+        const byeHtml = byeTeam ? `<div style="font-size:10px;color:var(--fg3);padding:5px 0;font-style:italic">${byeTeam.emoji||''} ${byeTeam.name} — bye</div>` : '';
+        schedHtml += `<div style="margin-bottom:12px">
+          <div style="font-size:10px;color:var(--warn);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px">round ${roundLabel}${i===0?' <span style="color:var(--good)">// next</span>':''}</div>
+          <div style="background:var(--bg2);border:1px solid var(--border);padding:8px 12px">${pairsHtml}${byeHtml}</div>
+        </div>`;
+      }
+      sg.innerHTML = schedHtml;
+    }
+  }
+
   const h2h = document.getElementById('h2hGrid');
   const fl = document.getElementById('fixtureLog');
   if (!h2h || !fl) return;
@@ -910,7 +925,7 @@ function renderStandings() {
     return {...t, w, l, d, gf, ga, pts: w*3+d};
   }).sort((a,b) => b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga));
   if (!ts.length) { tbl.innerHTML = '<div class="notice">no teams registered</div>'; return; }
-  tbl.innerHTML = `<div class="srow" style="color:var(--fg3);font-size:10px"><div>#</div><div>team</div><div>W-D-L</div><div>pts</div></div>${ts.map((t,i)=>`<div class="srow"><div style="color:var(--fg3)">${i+1}</div><div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${(t.colors||['#888'])[0]};margin-right:5px"></span>${t.name}</div><div style="color:var(--fg2)">${t.w}-${t.d}-${t.l}</div><div style="color:var(--good)">${t.pts}</div></div>`).join('')}`;
+  tbl.innerHTML = `<div class="srow" style="color:var(--fg3);font-size:10px"><div>#</div><div>team</div><div>W-D-L</div><div>pts</div></div>${ts.map((t,i)=>`<div class="srow"><div style="color:var(--fg3)">${i+1}</div><div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color||t.colors?.[0]||'#888'};margin-right:5px"></span>${t.emoji?t.emoji+' ':''}${t.name}</div><div style="color:var(--fg2)">${t.w}-${t.d}-${t.l}</div><div style="color:var(--good)">${t.pts}</div></div>`).join('')}`;
 }
 
 function renderOwner() {
@@ -932,7 +947,7 @@ function renderOwnerTeams() {
   if (!state.teams.length) { el.innerHTML = '<div class="notice">no teams to manage</div>'; return; }
   el.innerHTML = state.teams.map(t => {
     const roster = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===t.id).length;
-    const dots = (t.colors||['#888']).map(c=>`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:3px"></span>`).join('');
+    const dots = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color||t.colors?.[0]||'#888'};margin-right:3px"></span>${t.emoji?`<span style="font-size:14px;margin-right:4px">${t.emoji}</span>`:''}`;
     return `<div class="team-list-card">
       ${dots}
       <div style="flex:1"><div style="font-weight:700">${t.name}</div><div style="font-size:10px;color:var(--fg3)">${roster}/7 players drafted</div></div>
@@ -957,10 +972,6 @@ function renderPlayerEditor() {
     <div class="erow"><div class="elabel">name</div><input type="text" value="${p.name}" onchange="state.players[${pi}].name=this.value"></div>
     <div class="erow"><div class="elabel">position</div><select onchange="state.players[${pi}].pos=this.value"><option value="attacker"${p.pos==='attacker'?' selected':''}>attacker</option><option value="midfielder"${p.pos==='midfielder'?' selected':''}>midfielder</option><option value="defender"${p.pos==='defender'?' selected':''}>defender</option><option value="goalie"${p.pos==='goalie'?' selected':''}>goalie</option></select></div>
     ${state.stats.map(s=>`<div class="erow"><div class="elabel">${s.name}</div><input type="number" min="0" max="100" value="${p[s.id]||0}" onchange="state.players[${pi}]['${s.id}']=+this.value"></div>`).join('')}
-    <div class="erow">
-      <div class="elabel">value ($M) <span style="font-size:9px;color:var(--fg3)">auto: ${fmtVal(playerValue(p))}</span></div>
-      <input type="number" min="1" max="100" step="0.5" placeholder="${playerValue(p).toFixed(1)}" value="${p.customValue!==undefined&&p.customValue!==''?p.customValue:''}" onchange="state.players[${pi}].customValue=this.value===''?undefined:+this.value">
-    </div>
     <div class="brow"><button class="danger" onclick="removePlayer(${pi})">remove</button></div>
   </div>`).join('');
 }
@@ -995,15 +1006,15 @@ function resetLeague() {
 const WEATHER_TABLE = [
   { min:1,  max:30, name:'fair & mild',                     icon:'☀️',  color:'#ffcc44', effect:'none',        desc:'Conditions are unremarkable. The pitch is dry. The sky is the usual sky.' },
   { min:31, max:50, name:'stormy',                           icon:'⛈️',  color:'#44ccff', effect:'storm',       desc:'Rain hammers the pitch.' },
-  { min:51, max:55, name:'earthquake',                       icon:'🌋',  color:'#ff8844', effect:'quake',       desc:'The ground moves. The Gods are angry. Nothing can be relied upon.' },
+  { min:51, max:55, name:'earthquake',                       icon:'🌋',  color:'#ff8844', effect:'quake',       desc:'The ground moves. All stats are heightened unpredictably. Nothing can be relied upon.' },
   { min:56, max:60, name:'ravens',                           icon:'🐦‍⬛', color:'#cc88ff', effect:'ravens',      desc:'A murder of ravens settles on the crossbars. They watch everything.' },
   { min:61, max:65, name:'upside down',                      icon:'🙃',  color:'#88ff44', effect:'upside_down', desc:'Something is inverted' },
   { min:66, max:70, name:'eerie mist',                       icon:'🌫️',  color:'#ff4444', effect:'mist',        desc:'A pale mist rolls in from no particular direction. Watch yourself.' },
   { min:71, max:75, name:'odd figures hover over the pitch', icon:'👁️',  color:'#8844ff', effect:'figures',     desc:'They do not interfere. They observe.' },
   { min:76, max:80, name:'sudden blackout',                  icon:'⬛',  color:'#444444', effect:'blackout',    desc:'The lights go out. All players are reduced to nothing except one, who becomes everything.' },
   { min:81, max:85, name:'the beast that has no name',       icon:'❓',  color:'#ff4444', effect:'beast',       desc:'It arrives. It watches. It has no effect on the score. The players do not speak of it afterward.' },
-  { min:86, max:90, name:'quicksand',                        icon:'🏜️',  color:'#ff8844', effect:'quicksand',   desc:'The pitch thickens underfoot.' },
-  { min:91, max:95, name:'zero gravity forcefield explodes', icon:'🌀',  color:'#44ff88', effect:'gravity',     desc:'For reasons that remain classified, certain players perform much better.' },
+  { min:86, max:90, name:'quicksand',                        icon:'🏜️',  color:'#ff8844', effect:'quicksand',   desc:'The pitch thickens underfoot..' },
+  { min:91, max:95, name:'zero gravity forcefield explodes', icon:'🌀',  color:'#44ff88', effect:'gravity',     desc:'For reasons that remain classified, goalies and midfielders achieve extraordinary things.' },
   { min:96, max:100,name:'no weather is present',            icon:'🤔',  color:'#888888', effect:'reroll',      desc:'Which seems odd. The league does not comment.' },
 ];
 
@@ -1092,75 +1103,104 @@ function applyWeather(player, weather, allPlayers) {
   return p;
 }
 
+// ── SCHEDULE ──────────────────────────────────────────────────────────────
+// Generates a full round-robin schedule using the standard rotation algorithm.
+// Each round has floor(n/2) games; if n is odd one team gets a bye.
+// Returns array of rounds, each round is array of [homeId, awayId] pairs (+ optional byeId).
+function generateSchedule(teams) {
+  if (teams.length < 2) return [];
+  const ids = teams.map(t => t.id);
+  const n = ids.length;
+  const usesBye = n % 2 !== 0;
+  const list = usesBye ? [...ids, 'BYE'] : [...ids]; // pad with BYE if odd
+  const rounds = [];
+  for (let r = 0; r < list.length - 1; r++) {
+    const pairs = [];
+    let byeId = null;
+    for (let i = 0; i < list.length / 2; i++) {
+      const h = list[i];
+      const a = list[list.length - 1 - i];
+      if (h === 'BYE') { byeId = a; continue; }
+      if (a === 'BYE') { byeId = h; continue; }
+      pairs.push([h, a]);
+    }
+    rounds.push({ pairs, byeId });
+    // rotate: keep list[0] fixed, rotate the rest
+    list.splice(1, 0, list.pop());
+  }
+  return rounds;
+}
+
 function runSim() {
   if (state.teams.length < 2) { flash('need 2+ teams'); return; }
+
+  // Regenerate schedule if teams have changed or no schedule exists
+  const scheduleTeamIds = JSON.stringify((state.scheduleTeamIds||[]));
+  const currentTeamIds  = JSON.stringify(state.teams.map(t=>t.id));
+  if (!state.schedule || !state.schedule.length || scheduleTeamIds !== currentTeamIds) {
+    state.schedule = generateSchedule(state.teams);
+    state.scheduleTeamIds = state.teams.map(t=>t.id);
+    state.scheduleRound = 0; // index into schedule array
+  }
+
   state.roundNum = (state.roundNum||0) + 1;
 
-  // Roll weather
-  const weather = rollWeather();
+  // Pick which schedule slot to play (cycle back to start after full rotation)
+  const schedIdx = (state.scheduleRound || 0) % state.schedule.length;
+  const slot = state.schedule[schedIdx];
+  state.scheduleRound = schedIdx + 1;
 
-  // For blackout: pick one random player from all drafted players as the hero
+  // Roll weather once for the round
+  const weather = rollWeather();
   if (weather.effect === 'blackout') {
     const allDrafted = Object.keys(state.draftedBy);
-    if (allDrafted.length > 0) {
+    if (allDrafted.length > 0)
       weather._heroId = allDrafted[Math.floor(Math.random() * allDrafted.length)];
-    }
   }
 
-  const teams = [...state.teams];
-  for (let i=0; i<teams.length-1; i++) {
-    for (let j=i+1; j<teams.length; j++) {
-      const h = teams[i], a = teams[j];
+  for (const [hId, aId] of slot.pairs) {
+    const h = state.teams.find(t=>t.id===hId);
+    const a = state.teams.find(t=>t.id===aId);
+    if (!h || !a) continue;
 
-      // Get rosters and apply weather
-      const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-      const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-      const hR = hRaw.map(p => applyWeather(p, weather, state.players));
-      const aR = aRaw.map(p => applyWeather(p, weather, state.players));
+    const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+    const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+    const hR = hRaw.map(p => applyWeather(p, weather, state.players));
+    const aR = aRaw.map(p => applyWeather(p, weather, state.players));
 
-      // Tactic multipliers — hidden from opponents, applied here
-      const hTac = h.tactic || 'bal';
-      const aTac = a.tactic || 'bal';
-      const tm = (tac, role) => {
-        if (tac === 'atk') return (role==='attacker'||role==='midfielder') ? 1.3 : 0.8;
-        if (tac === 'def') return (role==='defender' ||role==='goalie')    ? 1.3 : 0.8;
-        return 1.0;
-      };
+    const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+    const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+    const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+    const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+    const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+    const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+    const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+    const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
 
-      const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p)*tm(hTac,'attacker'),0);
-      const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p)*tm(hTac,'midfielder'),0);
-      const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p)*tm(hTac,'defender'),0);
-      const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p)*tm(hTac,'goalie'),0);
-      const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p)*tm(aTac,'attacker'),0);
-      const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p)*tm(aTac,'midfielder'),0);
-      const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p)*tm(aTac,'defender'),0);
-      const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p)*tm(aTac,'goalie'),0);
+    const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20;
+    const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
 
-      const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20;
-      const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
-
-      const g = {
-        home: h.name, away: a.name, homeId: h.id, awayId: a.id,
-        homeScore: Math.max(0, Math.round(hPow/120)),
-        awayScore: Math.max(0, Math.round(aPow/120)),
-        round: state.roundNum,
-        weather: {
-          name: weather.name,
-          icon: weather.icon,
-          color: weather.color,
-          desc: weather.desc,
-          roll: weather.roll,
-          reroll: weather.reroll || null,
-          originalName: weather.originalName || null,
-          heroId: weather._heroId || null,
-        }
-      };
-      g.report = generateReport(g);
-      state.games.push(g);
-    }
+    const g = {
+      home: h.name, away: a.name, homeId: h.id, awayId: a.id,
+      homeScore: Math.max(0, Math.round(hPow/120)),
+      awayScore: Math.max(0, Math.round(aPow/120)),
+      round: state.roundNum,
+      byeTeam: slot.byeId ? (state.teams.find(t=>t.id===slot.byeId)||{name:'unknown'}).name : null,
+      weather: {
+        name: weather.name, icon: weather.icon, color: weather.color,
+        desc: weather.desc, roll: weather.roll,
+        reroll: weather.reroll || null,
+        originalName: weather.originalName || null,
+        heroId: weather._heroId || null,
+      }
+    };
+    g.report = generateReport(g);
+    state.games.push(g);
   }
+
   saveState(); renderLeague(); renderStandings();
-  flash(`round ${state.roundNum} — weather: ${weather.name}`);
+  const byeTeamName = slot.byeId ? (state.teams.find(t=>t.id===slot.byeId)||{name:'?'}).name : null;
+  flash(`round ${state.roundNum} — weather: ${weather.name}${byeTeamName?' — bye: '+byeTeamName:''}`);
 }
 
 function showCreateTeam() { showTeamModal(null); }
@@ -1168,39 +1208,51 @@ function showEditTeam(id) { showTeamModal(state.teams.find(t=>t.id===id)); }
 
 function showTeamModal(existing) {
   const isNew = !existing;
-  const sel = existing ? (existing.colors||[]) : ['#e8e8e8'];
-  const mount = document.getElementById('modalMount');
-  mount.innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
-    <div class="modal-title">${isNew?'create a new team':'edit team'}</div>
-    <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">team name</div><input type="text" id="tname" value="${existing?existing.name:''}" placeholder="the void walkers" maxlength="32"></div>
-    <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">motto</div><input type="text" id="tmotto" value="${existing?existing.motto||'':''}" placeholder="from nothing, everything" maxlength="60"></div>
-    <div style="margin-bottom:18px"><div class="elabel" style="margin-bottom:6px">team colors (pick up to 3)</div>
-    <div class="color-picker">${COLORS.map(c=>`<div class="sw${sel.includes(c)?' sel':''}" style="background:${c}" data-c="${c}" onclick="toggleSw(this)"></div>`).join('')}</div></div>
-    <div class="brow">
-      <button class="good" onclick="saveTeam(${isNew},'${existing?existing.id:''}')">${isNew?'create team':'save changes'}</button>
-      <button onclick="closeModal()">cancel</button>
-    </div>
-  </div></div>`;
+  const selColor = existing ? (existing.color || existing.colors?.[0] || '#e8e8e8') : '#e8e8e8';
+  const selEmoji = existing ? (existing.emoji || '') : '';
+  document.getElementById('modalMount').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+      <div class="modal-title">${isNew?'create a new team':'edit team'}</div>
+      <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">team name</div>
+        <input type="text" id="tname" value="${existing?existing.name:''}" placeholder="the void walkers" maxlength="32"></div>
+      <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">motto</div>
+        <input type="text" id="tmotto" value="${existing?existing.motto||'':''}" placeholder="from nothing, everything" maxlength="60"></div>
+      <div style="margin-bottom:14px"><div class="elabel" style="margin-bottom:6px">team color (pick one)</div>
+        <div class="color-picker">${COLORS.map(c=>`<div class="sw${c===selColor?' sel':''}" style="background:${c}" data-c="${c}" onclick="toggleSw(this)"></div>`).join('')}</div></div>
+      <div style="margin-bottom:18px"><div class="elabel" style="margin-bottom:6px">team emblem</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${EMOJIS.map(e=>`<span onclick="toggleEmoji(this)" data-e="${e}" style="font-size:24px;cursor:pointer;padding:4px 6px;border:2px solid ${e===selEmoji?'var(--fg)':'transparent'};border-radius:4px;transition:border-color .1s;line-height:1">${e}</span>`).join('')}</div></div>
+      <div class="brow">
+        <button class="good" onclick="saveTeam(${isNew},'${existing?existing.id:''}')">${isNew?'create team':'save changes'}</button>
+        <button onclick="closeModal()">cancel</button>
+      </div>
+    </div></div>`;
 }
 
 function toggleSw(el) {
-  const s = document.querySelectorAll('.sw.sel');
-  if (el.classList.contains('sel')) el.classList.remove('sel');
-  else { if (s.length>=3) s[0].classList.remove('sel'); el.classList.add('sel'); }
+  document.querySelectorAll('.sw.sel').forEach(s => s.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function toggleEmoji(el) {
+  document.querySelectorAll('[data-e]').forEach(e => e.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--fg)';
 }
 
 function saveTeam(isNew, existingId) {
   const name = document.getElementById('tname').value.trim();
   if (!name) { flash('team needs a name'); return; }
   const motto = document.getElementById('tmotto').value.trim();
-  const colors = [...document.querySelectorAll('.sw.sel')].map(el=>el.dataset.c);
+  const colorEl = document.querySelector('.sw.sel');
+  const color = colorEl ? colorEl.dataset.c : '#e8e8e8';
+  const emojiEl = [...document.querySelectorAll('[data-e]')].find(e => e.style.borderColor && e.style.borderColor !== 'transparent');
+  const emoji = emojiEl ? emojiEl.dataset.e : '';
   if (isNew) {
     const id = 't'+Date.now();
-    state.teams.push({id, name, motto, colors: colors.length?colors:['#e8e8e8']});
+    state.teams.push({id, name, motto, color, emoji, colors:[color]});
     sessionStorage.setItem('uwc_myteam', id);
   } else {
     const idx = state.teams.findIndex(t=>t.id===existingId);
-    if (idx>=0) state.teams[idx] = {id:existingId, name, motto, colors: colors.length?colors:['#e8e8e8']};
+    if (idx>=0) state.teams[idx] = {id:existingId, name, motto, color, emoji, colors:[color]};
   }
   saveState(); closeModal(); render();
 }
@@ -1208,6 +1260,11 @@ function saveTeam(isNew, existingId) {
 function closeModal() { document.getElementById('modalMount').innerHTML = ''; }
 
 function switchTab(name) {
+  if (name === 'owner') { showOwnerPasswordModal(); return; }
+  doSwitchTab(name);
+}
+
+function doSwitchTab(name) {
   document.querySelectorAll('.tc').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
@@ -1217,6 +1274,38 @@ function switchTab(name) {
   if (name==='owner') renderOwner();
   if (name==='league') renderLeague();
   if (name==='teams') renderTeams();
+}
+
+function showOwnerPasswordModal() {
+  document.getElementById('modalMount').innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="width:320px">
+        <div class="modal-title">owner access</div>
+        <div style="margin-bottom:14px;font-size:11px;color:var(--fg3)">enter the password to continue</div>
+        <input type="password" id="ownerPwInput" placeholder="password" style="margin-bottom:10px"
+          onkeydown="if(event.key==='Enter')checkOwnerPw()">
+        <div id="ownerPwErr" style="font-size:11px;color:var(--danger);min-height:16px;margin-bottom:8px"></div>
+        <div class="brow" style="margin-top:0">
+          <button class="primary" onclick="checkOwnerPw()">enter</button>
+          <button onclick="closeModal()">cancel</button>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(() => { const i = document.getElementById('ownerPwInput'); if(i) i.focus(); }, 40);
+}
+
+function checkOwnerPw() {
+  const inp = document.getElementById('ownerPwInput');
+  if (!inp) return;
+  if (inp.value === 'scout') {
+    closeModal();
+    doSwitchTab('owner');
+  } else {
+    const err = document.getElementById('ownerPwErr');
+    if (err) err.textContent = 'incorrect password';
+    inp.value = '';
+    inp.focus();
+  }
 }
 
 let ft;
