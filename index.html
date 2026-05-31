@@ -588,13 +588,7 @@ function render() {
 }
 
 function updateTicker() {
-  const el = document.getElementById('ticker'); if (!el) return;
-  const atk = state.players.filter(p=>p.pos==='attacker').length;
-  const mid = state.players.filter(p=>p.pos==='midfielder').length;
-  const def = state.players.filter(p=>p.pos==='defender').length;
-  const gk = state.players.filter(p=>p.pos==='goalie').length;
-  const fb = window._fbRef ? ' // firebase: live' : ' // offline mode';
-  el.textContent = `// ${state.players.length} players (${atk} atk / ${mid} mid / ${def} def / ${gk} gk) // ${state.teams.length} teams // ${state.leagueName||'unworld cup'}${fb}`;
+  el.textContent = 'Why have thou forsaken us'
 }
 
 function filterPlayers(f, btn) {
