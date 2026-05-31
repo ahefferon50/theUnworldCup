@@ -42,6 +42,7 @@ const app = initializeApp(firebaseConfig);
       if (!state.teams) state.teams = [];
       if (!state.stats) state.stats = window._defaultStats();
       if (!state.roundNum) state.roundNum = 0;
+      if (!state.tactics) state.tactics = {};
       render();
     }
   });
@@ -479,6 +480,7 @@ const DEFAULT_STATE = {
   teams: [],
   games: [],
   draftedBy: {},
+  tactics: {},
   roundNum: 0,
 };
 
@@ -499,6 +501,7 @@ function loadState() {
       if (!state.teams) state.teams = [];
       if (!state.stats) state.stats = _defaultStats();
       if (!state.roundNum) state.roundNum = 0;
+      if (!state.tactics) state.tactics = {};
     } else {
       state = JSON.parse(JSON.stringify(DEFAULT_STATE));
     }
@@ -692,6 +695,17 @@ function renderDraft() {
         <span style="color:var(--fg3)"> remaining of $${BUDGET}M</span>
       </div>
     </div>
+  </div>
+  <div style="margin-bottom:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border)">
+    <div class="elabel" style="margin-bottom:8px">tactics (hidden from other teams)</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${['attacking','balanced','defensive'].map(tac => {
+        const cur = (state.tactics && state.tactics[myTeam.id]) || 'balanced';
+        const colors = {attacking:'var(--danger)',balanced:'var(--warn)',defensive:'var(--good)'};
+        const active = cur === tac;
+        return `<button class="fbtn${active?' active':''}" style="border-color:${active?colors[tac]:'var(--border)'};color:${active?colors[tac]:'var(--fg3)'}" onclick="setTactics('${myTeam.id}','${tac}')">${tac}</button>`;
+      }).join('')}
+    </div>
   </div>`;
 
   g.innerHTML = '';
@@ -720,6 +734,14 @@ function renderDraft() {
 function claimTeam(id) {
   sessionStorage.setItem('uwc_myteam', id);
   renderDraft();
+}
+
+function setTactics(teamId, tac) {
+  if (!state.tactics) state.tactics = {};
+  state.tactics[teamId] = tac;
+  saveState();
+  renderDraft();
+  flash(`tactics set: ${tac}`);
 }
 
 function draft(pid) {
@@ -989,6 +1011,7 @@ function renderPlayerEditor() {
   ed.innerHTML = state.players.map((p,pi) => `<div class="card" style="margin-bottom:8px">
     <div class="erow"><div class="elabel">name</div><input type="text" value="${p.name}" onchange="state.players[${pi}].name=this.value"></div>
     <div class="erow"><div class="elabel">position</div><select onchange="state.players[${pi}].pos=this.value"><option value="attacker"${p.pos==='attacker'?' selected':''}>attacker</option><option value="midfielder"${p.pos==='midfielder'?' selected':''}>midfielder</option><option value="defender"${p.pos==='defender'?' selected':''}>defender</option><option value="goalie"${p.pos==='goalie'?' selected':''}>goalie</option></select></div>
+    <div class="erow"><div class="elabel">value ($M)</div><input type="number" min="0.1" max="99" step="0.1" value="${p.customValue !== undefined && p.customValue !== null && p.customValue !== '' ? p.customValue : playerValue(p).toFixed(1)}" onchange="state.players[${pi}].customValue=+this.value"></div>
     ${state.stats.map(s=>`<div class="erow"><div class="elabel">${s.name}</div><input type="number" min="0" max="100" value="${p[s.id]||0}" onchange="state.players[${pi}]['${s.id}']=+this.value"></div>`).join('')}
     <div class="brow"><button class="danger" onclick="removePlayer(${pi})">remove</button></div>
   </div>`).join('');
@@ -1186,14 +1209,32 @@ function runSim() {
     const hR = hRaw.map(p => applyWeather(p, weather, state.players));
     const aR = aRaw.map(p => applyWeather(p, weather, state.players));
 
-    const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
-    const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-    const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-    const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
-    const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
-    const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-    const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-    const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+    const hTac = (state.tactics && state.tactics[h.id]) || 'balanced';
+    const aTac = (state.tactics && state.tactics[a.id]) || 'balanced';
+    function applyTactics(players, tac) {
+      return players.map(p => {
+        const q = { ...p };
+        if (tac === 'attacking') {
+          if (q.pos === 'attacker' || q.pos === 'midfielder') { q.str = Math.min(100, Math.round(q.str * 1.3)); q.spd = Math.min(100, Math.round(q.spd * 1.2)); }
+          if (q.pos === 'defender' || q.pos === 'goalie')     { q.def = Math.max(0, Math.round(q.def * 0.85)); }
+        } else if (tac === 'defensive') {
+          if (q.pos === 'defender' || q.pos === 'goalie')     { q.def = Math.min(100, Math.round(q.def * 1.3)); q.stm = Math.min(100, Math.round(q.stm * 1.2)); }
+          if (q.pos === 'attacker' || q.pos === 'midfielder') { q.str = Math.max(0, Math.round(q.str * 0.85)); }
+        }
+        return q;
+      });
+    }
+    const hP = applyTactics(hR, hTac);
+    const aP = applyTactics(aR, aTac);
+
+    const hAtk = hP.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+    const hMid = hP.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+    const hDef = hP.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+    const hGk  = hP.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+    const aAtk = aP.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+    const aMid = aP.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+    const aDef = aP.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+    const aGk  = aP.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
 
     const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20;
     const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
