@@ -603,8 +603,11 @@ function updateTicker() {
     "// CHANTING IN THE DARKNESS // THE BLACK GOAT WITH A THOUSAND YOUNG //",
     "//VIRI PIUM SACRIFICAT//"
   ];
-
-
+// Pick a random phrase from the list above
+  const randomIndex = Math.floor(Math.random() * doomPhrases.length);
+  
+  // Update the ticker text
+  el.textContent = doomPhrases[randomIndex];
 
 function filterPlayers(f, btn) {
   playerFilter = f;
