@@ -785,6 +785,15 @@ function renderTeams() {
         out += '</div></div>';
         return out;
       }
+      
+      // --- CHANGES START HERE ---
+      // 1. If it's my team, force the details tag to stay permanently open
+      const detailsTag = isMine ? '<div class="card" style="border-color:#555">' : '<details class="card" style="cursor:pointer;user-select:none">';
+      const detailsCloseTag = isMine ? '</div>' : '</details>';
+
+      // 2. If it's not my team, wrap the header area inside a <summary> tag
+      const summaryTag = isMine ? '' : '<summary style="outline:none; list-style-position: inside;">';
+      const summaryCloseTag = isMine ? '' : '</summary>';
 
       html += `<div class="card" style="border-color:${isMine?'#555':''}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
