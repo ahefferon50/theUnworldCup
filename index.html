@@ -736,13 +736,6 @@ function claimTeam(id) {
   renderDraft();
 }
 
-function setTactics(teamId, tac) {
-  if (!state.tactics) state.tactics = {};
-  state.tactics[teamId] = tac;
-  saveState();
-  renderDraft();
-  flash(`tactics set: ${tac}`);
-}
 
 function draft(pid) {
   const myTeamId = sessionStorage.getItem('uwc_myteam');
@@ -810,6 +803,14 @@ function renderTeams() {
     });
   }
   sec.innerHTML = html;
+}
+
+  function setTactics(teamId, tac) {
+  if (!state.tactics) state.tactics = {};
+  state.tactics[teamId] = tac;
+  saveState();
+  renderDraft();
+  flash(`tactics set: ${tac}`);
 }
 
 function claimTeamAndGoDraft(id) {
