@@ -699,7 +699,7 @@ function renderDraft() {
   <div style="margin-bottom:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border)">
     <div class="elabel" style="margin-bottom:8px">tactics (hidden from other teams)</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${['attacking','balanced','defensive'].map(tac => {
+      ${['Tiki Taka-All Out Attack','Nice and Tidy-Balanced','Four Four Fucking Two-Defensive'].map(tac => {
         const cur = (state.tactics && state.tactics[myTeam.id]) || 'balanced';
         const colors = {attacking:'var(--danger)',balanced:'var(--warn)',defensive:'var(--good)'};
         const active = cur === tac;
