@@ -394,7 +394,7 @@ function generateReport(game) {
   if (atkPool.length && roll(0.80)) parts.push(rnd(atkPool));
   if (defPool.length && roll(0.65)) parts.push(rnd(defPool));
   if (midPool.length && roll(0.60)) parts.push(rnd(midPool));
-  if (parts.length === 0 && all.length) parts.push(`${rnd(all).name} was present for the duration and has been noted as such.`);
+  if (parts.length === 0 && all.length) parts.push(`${rnd(all).name} was present for the duration and has been warned.`);
 
   let potmPlayer = null;
   if (all.length && roll(0.55)) {
