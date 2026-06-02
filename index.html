@@ -274,16 +274,16 @@ button:disabled{opacity:.35;pointer-events:none}
 <script>
 const STORAGE_KEY = 'unworldcup_v1';
 const COLORS = ['#ff4444','#ff6a00','#ffcc44','#c8ff44','#44ff88','#44ffdd','#44ccff','#4488ff','#8844ff','#cc44ff','#ff44cc','#ffffff','#aaaaaa','#555555','#ff9999','#99ffcc','#99ddff'];
-const EMOJIS = ['🦊','🐺','🦁','🐯','🐻','🦝','🐗','🦌','🐢','🦅','🦉','🦇','🐙','🦑','🦈','🐊','🦎','👾','🌵','🔮'];
+const EMOJIS = ['🦊','🐺','🦁','🐯','🐻','🦝','🐗','🦌','🐢','🦅','🦉','🦇','🐙','🦑','🦈','🐊','🦎','👾','🌵','🌚','👻','🔮'];
 const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 
 const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
 
-const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names.","The away team bus arrived. The away team had not been on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
+const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names. Proably for the best","The away team bus arrived. The away team was not on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","The monster that ate several players was adjucited to have not impacted the final result by a team of experts","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
 
-const VERBS_ATK = ['struck','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
-const VERBS_GK  = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','denied passage to','Ate'];
-const verbs_Def = ['fucking nutted','deleted from the world','blocked','refused to block','dedended','stopped','angered','bled out'];
+const VERBS_ATK = ['struck','chucked it in','dispatched','detonated','manifested','willed into existence','deposited','conjured','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Absolutely twatted in'];
+const VERBS_GK  = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','removed the potential of','denied passage to','ate'];
+const verbs_Def = ['fucking nutted','deleted from the world','blocked','refused to block','defended','stopped','angered','whoopsie dasied','performed acts that shall not be recorded here', 'bled out'];
 const VERBS_MID = ['controlled the space around','imposed order upon','redistributed the chaos near','threaded through','quietly dominated','refused to yield ground to','made themselves very large near','narrated proceedings from the centre against','betrayed a certain animalistic fury'];
 
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
@@ -373,7 +373,7 @@ function generateReport(game) {
     `The ball spent eleven minutes in the air during the second half. This is not a record but it is close.`,
     `Both teams wore their correct kits. This was confirmed afterwards by a third party.`,
     `A substitution was made in the ${min()}th minute that no one on either bench appeared to authorise.`,
-    `${hManager} had not moved from the technical area since the 12th minute and did not appear to be breathing.`,
+    `${hManager} had not moved from the technical area since the 12th minute and did not appear to be breathing. `,
     `${aManager} was seen consulting a document during the second half. The document appeared to be blank.`,
     `Neither ${hManager} nor ${aManager} made a substitution. Sources close to the bench say neither acknowledged the option existed.`,
     `A figure in a long coat occupied the away dugout for the final twenty minutes. ${aManager} has not commented.`,
@@ -941,7 +941,7 @@ function renderLeague() {
           const pairKey = [hId,aId].sort().join('|');
           const pairCount = pairCounts[pairKey]||0;
           const isRivalry = pairCount >= rivalryMax && rivalryMax > 1;
-          const rivalLabel = isRivalry ? `<span style="font-size:9px;color:var(--danger);letter-spacing:.08em;margin:0 4px">⚡ the fixture</span>` : 'vs';
+          const rivalLabel = isRivalry ? `<span style="font-size:9px;color:var(--danger);letter-spacing:.08em;margin:0 4px">⚡ Blood Bath ⚡</span>` : 'vs';
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
             <div style="flex:1;display:flex;align-items:center;gap:5px">
               <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${hColor}"></span>
