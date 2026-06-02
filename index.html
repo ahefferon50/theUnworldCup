@@ -152,7 +152,7 @@ button:disabled{opacity:.35;pointer-events:none}
 <body>
 <div class="app">
   <div class="header">
-    <div class="header-sub">fantasy football league // season 1</div>
+    <div class="header-sub" id="seasonSubtitle">fantasy football league // season 1</div>
     <div class="header-title" id="leagueTitle">the <span>unworld</span> cup</div>
   </div>
   <div class="ticker" id="ticker">loading...</div>
@@ -182,6 +182,7 @@ button:disabled{opacity:.35;pointer-events:none}
   <div id="tab-draft" class="tc">
     <div class="section">
       <div class="slabel">draft</div>
+      <div id="transferWindowNotice"></div>
       <div id="draftTop"></div>
       <div class="filter-bar" id="draftFilterBar" style="margin-top:14px">
         <button class="fbtn active" onclick="filterDraft('all',this)">all</button>
@@ -218,6 +219,9 @@ button:disabled{opacity:.35;pointer-events:none}
     <div class="section">
       <div class="slabel">league table</div>
       <div id="standingsTable"></div>
+      <div class="divider"></div>
+      <div class="slabel">player of the match leaderboard</div>
+      <div id="potmLeaderboard"></div>
     </div>
   </div>
 
@@ -233,23 +237,33 @@ button:disabled{opacity:.35;pointer-events:none}
         </div>
       </div>
       <div class="divider"></div>
+      <div class="slabel">league settings</div>
+      <div class="card">
+        <div class="erow"><div class="elabel">league name</div><input type="text" id="leagueNameInput"></div>
+        <div class="erow"><div class="elabel">season name</div><input type="text" id="seasonNameInput" placeholder="season 1: the narrowing"></div>
+        <div class="erow"><div class="elabel">transfer window</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span id="windowStatus" style="font-size:11px"></span>
+            <button id="windowToggleBtn" onclick="toggleTransferWindow()" style="padding:5px 14px;font-size:10px"></button>
+          </div>
+        </div>
+        <div class="brow">
+          <button class="primary" onclick="saveSettings()">save settings</button>
+          <button class="danger" onclick="resetLeague()">reset league</button>
+        </div>
+      </div>
+      <div class="divider"></div>
       <div class="slabel">manage teams</div>
       <div id="ownerTeams"></div>
+      <div class="divider"></div>
+      <div class="slabel">injuries</div>
+      <div id="injuryManager"></div>
       <div class="divider"></div>
       <div class="slabel">edit players</div>
       <div id="playerEditor"></div>
       <div class="brow">
         <button class="good" onclick="addPlayer()">+ add player</button>
         <button class="primary" onclick="savePlayers()">save all players</button>
-      </div>
-      <div class="divider"></div>
-      <div class="slabel">league settings</div>
-      <div class="card">
-        <div class="erow"><div class="elabel">league name</div><input type="text" id="leagueNameInput"></div>
-        <div class="brow">
-          <button class="primary" onclick="saveSettings()">save settings</button>
-          <button class="danger" onclick="resetLeague()">reset league</button>
-        </div>
       </div>
     </div>
   </div>
@@ -281,6 +295,12 @@ function generateReport(game) {
   const aR = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===game.awayId).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
   const all = [...hR,...aR];
 
+  const hTeam = state.teams.find(t=>t.id===game.homeId) || {};
+  const aTeam = state.teams.find(t=>t.id===game.awayId) || {};
+  const hManager = hTeam.manager || 'the home manager';
+  const aManager = aTeam.manager || 'the away manager';
+  const ground = hTeam.homeGround || 'the pitch';
+
   const hAtk = hR.filter(p=>p.pos==='attacker');
   const aAtk = aR.filter(p=>p.pos==='attacker');
   const hDef = hR.filter(p=>p.pos==='defender');
@@ -291,7 +311,6 @@ function generateReport(game) {
   const aGk  = aR.filter(p=>p.pos==='goalie');
   const min  = () => Math.floor(Math.random()*85)+5;
 
-  // ── attacker pool ────────────────────────────────────────────────────────
   const atkPool = [];
   if (hAtk.length && aGk.length)
     atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} a goal in the ${min()}th minute; ${rnd(aGk).name} ${rnd(VERBS_GK)} two subsequent attempts before the ground shifted.`);
@@ -312,7 +331,6 @@ function generateReport(game) {
   if (!atkPool.length)
     atkPool.push(`The match proceeded. Causality was maintained, more or less.`);
 
-  // ── defender pool ────────────────────────────────────────────────────────
   const defPool = [];
   if (aDef.length && hAtk.length)
     defPool.push(`${rnd(aDef).name} ${rnd(verbs_Def)} ${rnd(hAtk).name} in the ${min()}th, which briefly altered the shape of the game.`);
@@ -331,7 +349,6 @@ function generateReport(game) {
   if (hGk.length)
     defPool.push(`${rnd(hGk).name} ${rnd(VERBS_GK)} what would have been the equaliser. The crowd did not react immediately.`);
 
-  // ── midfielder pool ──────────────────────────────────────────────────────
   const midPool = [];
   if (hMid.length)
     midPool.push(`${rnd(hMid).name} ${rnd(VERBS_MID)} the opposing midfield for a period officials estimated at most of the second half.`);
@@ -346,10 +363,9 @@ function generateReport(game) {
   if (hMid.length && aDef.length)
     midPool.push(`${rnd(hMid).name} ${rnd(VERBS_MID)} the defensive shape of ${rnd(aDef).name} in the ${min()}th. Something shifted.`);
 
-  // ── atmospheric pool ─────────────────────────────────────────────────────
   const atmPool = [
-    `The match was played at the correct time. This was later noted as unusual.`,
-    `The match was played thirty minutes early. This was described by all involved as most excellent.`,
+    `The match was played at ${ground}. The correct time. This was later noted as unusual.`,
+    `The match was played thirty minutes early at ${ground}. This was described by all involved as most excellent.`,
     `A penalty was not awarded. Whether one should have been remains, officially, an open question.`,
     `The referee added four minutes of stoppage time and then, without explanation, subtracted two.`,
     `An injury was treated on the pitch for six minutes. The player involved returned and was not thereafter visible.`,
@@ -357,41 +373,44 @@ function generateReport(game) {
     `The ball spent eleven minutes in the air during the second half. This is not a record but it is close.`,
     `Both teams wore their correct kits. This was confirmed afterwards by a third party.`,
     `A substitution was made in the ${min()}th minute that no one on either bench appeared to authorise.`,
-    `The home coach had not moved from the technical area since the 12th minute and did not appear to be breathing.`,
-    `The away manager was seen consulting a document during the second half. The document appeared to be blank.`,
-    `Neither coach made a substitution. Sources close to the bench say neither coach acknowledged the option existed.`,
-    `A figure in a long coat occupied the away dugout for the final twenty minutes. The club has not confirmed who this was.`,
-    `The home manager, when asked about the result post-match, said only: "I do not belive in your reality scum."`,
+    `${hManager} had not moved from the technical area since the 12th minute and did not appear to be breathing.`,
+    `${aManager} was seen consulting a document during the second half. The document appeared to be blank.`,
+    `Neither ${hManager} nor ${aManager} made a substitution. Sources close to the bench say neither acknowledged the option existed.`,
+    `A figure in a long coat occupied the away dugout for the final twenty minutes. ${aManager} has not commented.`,
+    `${hManager}, when asked about the result post-match, said only: "I do not believe in your reality scum."`,
     `Attendance was recorded as either four thousand or one. The discrepancy has not been explained.`,
     `The away supporters sang a song that witnesses describe as "familiar, but wrong."`,
     `Row J was empty at kickoff. By half time it was full. No one in row J has been interviewed.`,
     `Someone in the crowd mumbled all of the events in match three seconds before they happened under his breath. This was noted and not followed up.`,
     `The stadium announcer mispronounced every name.`,
     `The fourth official's notes were later found to be written in a language no one recognised.`,
-    `The tunnel was longer after the match than it had been before.`,
-    `Celeberities attending the match include, Anne Hathaway, Tom Hiddelston, and Ghengis Khan.`,
-
+    `The tunnel at ${ground} was longer after the match than it had been before.`,
+    `Celebrities attending the match include Anne Hathaway, Tom Hiddleston, and Genghis Khan.`,
   ];
 
   const potmIntros = ['Player of the match, by general and uncomfortable consensus, was','Officials later designated the standout performance as belonging to','Those keeping records noted one name above all others:','Whatever happened here, it happened most noticeably around','If one player was to be held responsible for the shape of this result, sources suggest it was'];
   const potmOutros = ['who declined to be interviewed.','who was not available for comment and has not been since.','whose post-match remarks were described as "consistent with someone who had played."','who left the pitch at the final whistle without looking back.','who was seen afterwards sitting alone in the car park for an indeterminate period.','who, when asked to describe the game, said it had occurred.','who smiled in a way that did not reach anywhere.','whose boots, recovered from the changing room, were facing the wrong direction.'];
 
-  // ── assemble ─────────────────────────────────────────────────────────────
   const parts = [];
-
   if (atkPool.length && roll(0.80)) parts.push(rnd(atkPool));
   if (defPool.length && roll(0.65)) parts.push(rnd(defPool));
   if (midPool.length && roll(0.60)) parts.push(rnd(midPool));
   if (parts.length === 0 && all.length) parts.push(`${rnd(all).name} was present for the duration and has been noted as such.`);
 
-  if (all.length && roll(0.55)) parts.push(`${rnd(potmIntros)} ${rnd(all).name}, ${rnd(potmOutros)}`);
+  let potmPlayer = null;
+  if (all.length && roll(0.55)) {
+    potmPlayer = rnd(all);
+    parts.push(`${rnd(potmIntros)} ${potmPlayer.name}, ${rnd(potmOutros)}`);
+  }
   if (roll(0.50)) parts.push(rnd(atmPool));
   if (roll(0.25)) parts.push(rnd(atmPool));
   if (roll(0.70)) parts.push(`"${rnd(WASTELAND)}"`);
 
-  // shuffle everything, then conditionally append OMINOUS last at 30%
   shuffle(parts);
   if (roll(0.30)) parts.push(rnd(OMINOUS));
+
+  // Store POTM for leaderboard (returned alongside report)
+  game._potmId = potmPlayer ? potmPlayer.id : null;
 
   return parts.join(' ');
 }
@@ -585,6 +604,8 @@ function render() {
     const p = (state.leagueName||'the unworld cup').split(' ');
     t.innerHTML = p[0] + ' <span>' + p.slice(1).join(' ') + '</span>';
   }
+  const sub = document.getElementById('seasonSubtitle');
+  if (sub) sub.textContent = state.seasonName || 'fantasy football league // season 1';
 }
 
 function updateTicker() {
@@ -639,7 +660,8 @@ function renderPlayers() {
     const tm = tid ? state.teams.find(t=>t.id===tid) : null;
     const el = document.createElement('div');
     el.className = 'pc';
-    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span>${tm ? ' // <span style="color:var(--fg3)">'+tm.name+'</span>' : ''}</div><div class="pst">${stars(sc)}</div><div style="font-size:11px;color:var(--warn);margin-bottom:4px">${fmtVal(playerValue(p))}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}`;
+    const injured = (state.injuries||{})[p.id];
+    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}${injured?' <span style="color:var(--danger);font-size:9px">🤕</span>':''}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span>${tm ? ' // <span style="color:var(--fg3)">'+tm.name+'</span>' : ''}</div><div class="pst">${stars(sc)}</div><div style="font-size:11px;color:var(--warn);margin-bottom:4px">${fmtVal(playerValue(p))}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}`;
     g.appendChild(el);
   });
 }
@@ -647,7 +669,21 @@ function renderPlayers() {
 function renderDraft() {
   const top = document.getElementById('draftTop');
   const g = document.getElementById('draftGrid');
+  const notice = document.getElementById('transferWindowNotice');
   if (!top || !g) return;
+
+  // Transfer window check
+  const windowOpen = state.transferWindowOpen !== false; // default open
+  if (notice) {
+    if (!windowOpen) {
+      notice.innerHTML = `<div class="notice" style="border-color:var(--danger);color:var(--danger);margin-bottom:14px">⛔ transfer window is closed — drafting is disabled</div>`;
+      top.innerHTML = '';
+      g.innerHTML = '';
+      return;
+    } else {
+      notice.innerHTML = '';
+    }
+  }
 
   const myTeamId = sessionStorage.getItem('uwc_myteam');
   const myTeam = myTeamId ? state.teams.find(t=>t.id===myTeamId) : null;
@@ -694,17 +730,6 @@ function renderDraft() {
         <span style="color:${budgetColor};font-weight:700">$${remaining.toFixed(1)}M</span>
         <span style="color:var(--fg3)"> remaining of $${BUDGET}M</span>
       </div>
-    </div>
-  </div>
-  <div style="margin-bottom:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border)">
-    <div class="elabel" style="margin-bottom:8px">tactics (hidden from other teams)</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${['Tiki Taka-All Out Attack','Nice and Tidy-Balanced','Four Four Fucking Two-Defensive'].map(tac => {
-        const cur = (state.tactics && state.tactics[myTeam.id]) || 'balanced';
-        const colors = {attacking:'var(--danger)',balanced:'var(--warn)',defensive:'var(--good)'};
-        const active = cur === tac;
-        return `<button class="fbtn${active?' active':''}" style="border-color:${active?colors[tac]:'var(--border)'};color:${active?colors[tac]:'var(--fg3)'}" onclick="setTactics('${myTeam.id}','${tac}')">${tac}</button>`;
-      }).join('')}
     </div>
   </div>`;
 
@@ -758,6 +783,16 @@ function renderTeams() {
   const sec = document.getElementById('teamsSection'); if (!sec) return;
   const myTeamId = sessionStorage.getItem('uwc_myteam');
 
+  // Find rivalry pair (most games played between two teams)
+  const pairCounts = {};
+  (state.games||[]).forEach(g => {
+    if (!g.homeId||!g.awayId) return;
+    const key = [g.homeId,g.awayId].sort().join('|');
+    pairCounts[key] = (pairCounts[key]||0) + 1;
+  });
+  let rivalryKey = null, rivalryMax = 1;
+  Object.entries(pairCounts).forEach(([k,v]) => { if (v > rivalryMax) { rivalryMax = v; rivalryKey = k; } });
+
   let html = `<button class="bigbtn" style="margin-bottom:16px" onclick="showCreateTeam()">+ create new team</button>`;
 
   if (!state.teams.length) {
@@ -768,16 +803,37 @@ function renderTeams() {
       const atk = roster.filter(p=>p.pos==='attacker');
       const mid = roster.filter(p=>p.pos==='midfielder');
       const def = roster.filter(p=>p.pos==='defender');
-      const gk = roster.filter(p=>p.pos==='goalie');
+      const gk  = roster.filter(p=>p.pos==='goalie');
       const teamColor = t.color || t.colors?.[0] || '#888';
       const dots = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${teamColor};margin-right:3px"></span>${t.emoji?`<span style="font-size:16px;margin-right:4px">${t.emoji}</span>`:''}`;
       const isMine = myTeamId === t.id;
+      const tactic = (state.tactics && state.tactics[t.id]) || 'balanced';
+
+      // Rivalry badge
+      const isRival = rivalryKey && rivalryKey.split('|').includes(t.id);
+      const rivalId = isRival ? rivalryKey.split('|').find(id=>id!==t.id) : null;
+      const rivalTeam = rivalId ? state.teams.find(tt=>tt.id===rivalId) : null;
+      const rivalBadge = rivalTeam ? `<span style="font-size:9px;color:var(--danger);letter-spacing:.1em;text-transform:uppercase;margin-left:8px">⚡ rivalry: ${rivalTeam.name}</span>` : '';
+
+      // Last 5 results
+      const teamGames = (state.games||[]).filter(g=>g.homeId===t.id||g.awayId===t.id).slice(-5);
+      const historyDots = teamGames.map(g => {
+        const home = g.homeId===t.id;
+        const tf = home?g.homeScore:g.awayScore;
+        const ta = home?g.awayScore:g.homeScore;
+        const res = tf>ta?'W':ta>tf?'L':'D';
+        const col = res==='W'?'var(--good)':res==='L'?'var(--danger)':'var(--warn)';
+        return `<span style="display:inline-block;width:18px;height:18px;border-radius:3px;background:${col};color:var(--bg);font-size:9px;font-weight:700;text-align:center;line-height:18px">${res}</span>`;
+      }).join('');
+      const historyHtml = teamGames.length ? `<div style="display:flex;gap:3px;margin-bottom:10px">${historyDots}</div>` : '';
 
       function rosterSection(players, max, label, cls) {
         let out = `<div style="margin-bottom:10px"><div class="slot-label ${cls}">${label} (${players.length}/${max})</div><div class="slot-grid${max===1?' one':''}">`;
         for (let i=0;i<max;i++) {
-          if (players[i]) {
-            out += `<div class="slot-card"><div><div style="font-size:12px;font-weight:700">${players[i].name}</div><div style="font-size:10px;color:var(--warn)">${stars(calcScore(players[i]))}</div></div></div>`;
+          const p = players[i];
+          const injured = p && (state.injuries||{})[p.id];
+          if (p) {
+            out += `<div class="slot-card"><div><div style="font-size:12px;font-weight:700">${p.name}${injured?` <span style="color:var(--danger);font-size:9px">🤕 injured</span>`:''}</div><div style="font-size:10px;color:var(--warn)">${stars(calcScore(p))}</div></div></div>`;
           } else {
             out += `<div class="slot-empty">empty</div>`;
           }
@@ -785,22 +841,29 @@ function renderTeams() {
         out += '</div></div>';
         return out;
       }
-      
-      // --- CHANGES START HERE ---
-      // 1. If it's my team, force the details tag to stay permanently open
-      const detailsTag = isMine ? '<div class="card" style="border-color:#555">' : '<details class="card" style="cursor:pointer;user-select:none">';
-      const detailsCloseTag = isMine ? '</div>' : '</details>';
 
-      // 2. If it's not my team, wrap the header area inside a <summary> tag
-      const summaryTag = isMine ? '' : '<summary style="outline:none; list-style-position: inside;">';
-      const summaryCloseTag = isMine ? '' : '</summary>';
+      // Tactics bar — only on your own team, hidden from others
+      const tacticBar = isMine ? `<div style="margin-bottom:14px">
+        <div class="slabel" style="margin-bottom:8px">team tactics <span style="font-size:9px;color:var(--fg3);letter-spacing:.05em;text-transform:none">(hidden from other teams)</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${[['Tiki Taka — All Out Attack','attacking','var(--danger)'],['Nice and Tidy — Balanced','balanced','var(--warn)'],['Four Four Fucking Two — Defensive','defensive','var(--good)']].map(([label,val,col])=>{
+            const active = tactic===val;
+            return `<button onclick="setTactics('${t.id}','${val}')" style="flex:1;padding:8px 4px;font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border:1px solid ${active?col:'var(--border)'};background:${active?'rgba(255,255,255,0.05)':'none'};color:${active?col:'var(--fg3)'};text-align:center;transition:all .12s">${label}</button>`;
+          }).join('')}
+        </div>
+      </div>` : '';
 
       html += `<div class="card" style="border-color:${isMine?'#555':''}">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
           ${dots}<div style="font-size:16px;font-weight:700">${t.name}</div>
+          ${rivalBadge}
           ${isMine ? '<span class="pill live" style="margin-left:auto">your team</span>' : ''}
         </div>
-        ${t.motto ? `<div style="font-size:11px;color:var(--fg3);margin-bottom:12px;font-style:italic">"${t.motto}"</div>` : ''}
+        ${t.manager ? `<div style="font-size:10px;color:var(--fg3);margin-bottom:2px;letter-spacing:.05em">mgr: ${t.manager}</div>` : ''}
+        ${t.homeGround ? `<div style="font-size:10px;color:var(--fg3);margin-bottom:8px;letter-spacing:.05em">⬤ ${t.homeGround}</div>` : ''}
+        ${t.motto ? `<div style="font-size:11px;color:var(--fg3);margin-bottom:10px;font-style:italic">"${t.motto}"</div>` : ''}
+        ${historyHtml}
+        ${tacticBar}
         ${rosterSection(atk,2,'attackers','atk')}
         ${rosterSection(mid,2,'midfielders','mid')}
         ${rosterSection(def,2,'defenders','def')}
@@ -814,12 +877,12 @@ function renderTeams() {
   sec.innerHTML = html;
 }
 
-  function setTactics(teamId, tac) {
+function setTactics(teamId, tac) {
   if (!state.tactics) state.tactics = {};
   state.tactics[teamId] = tac;
   saveState();
-  renderDraft();
-  flash(`tactics set: ${tac}`);
+  renderTeams();
+  flash(`tactics: ${tac}`);
 }
 
 function claimTeamAndGoDraft(id) {
@@ -851,6 +914,15 @@ function renderLeague() {
       if (!sched || !sched.length || scheduleTeamIds !== currentTeamIds) {
         sched = generateSchedule(teams);
       }
+      // Rivalry data for schedule labels
+      const pairCounts = {};
+      (state.games||[]).forEach(g => {
+        if (!g.homeId||!g.awayId) return;
+        const key = [g.homeId,g.awayId].sort().join('|');
+        pairCounts[key] = (pairCounts[key]||0) + 1;
+      });
+      const rivalryMax = Math.max(1, ...Object.values(pairCounts));
+
       const nextIdx = (state.scheduleRound || 0) % sched.length;
       // Show next 3 rounds (or all if fewer)
       const lookahead = Math.min(3, sched.length);
@@ -866,12 +938,16 @@ function renderLeague() {
           if (!h||!a) return '';
           const hColor = h.color||h.colors?.[0]||'#888';
           const aColor = a.color||a.colors?.[0]||'#888';
+          const pairKey = [hId,aId].sort().join('|');
+          const pairCount = pairCounts[pairKey]||0;
+          const isRivalry = pairCount >= rivalryMax && rivalryMax > 1;
+          const rivalLabel = isRivalry ? `<span style="font-size:9px;color:var(--danger);letter-spacing:.08em;margin:0 4px">⚡ the fixture</span>` : 'vs';
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
             <div style="flex:1;display:flex;align-items:center;gap:5px">
               <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${hColor}"></span>
               ${h.emoji?h.emoji+' ':''}${h.name}
             </div>
-            <div style="font-size:10px;color:var(--fg3);padding:0 8px">vs</div>
+            <div style="font-size:10px;color:var(--fg3);padding:0 4px;text-align:center">${rivalLabel}</div>
             <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:5px">
               ${a.emoji?a.emoji+' ':''}${a.name}
               <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${aColor}"></span>
@@ -974,15 +1050,91 @@ function renderStandings() {
     games.forEach(g => { const home=g.homeId===t.id; const tf=home?g.homeScore:g.awayScore; const ta=home?g.awayScore:g.homeScore; gf+=tf; ga+=ta; if(tf>ta)w++; else if(ta>tf)l++; else d++; });
     return {...t, w, l, d, gf, ga, pts: w*3+d};
   }).sort((a,b) => b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga));
-  if (!ts.length) { tbl.innerHTML = '<div class="notice">no teams registered</div>'; return; }
-  tbl.innerHTML = `<div class="srow" style="color:var(--fg3);font-size:10px"><div>#</div><div>team</div><div>W-D-L</div><div>pts</div></div>${ts.map((t,i)=>`<div class="srow"><div style="color:var(--fg3)">${i+1}</div><div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color||t.colors?.[0]||'#888'};margin-right:5px"></span>${t.emoji?t.emoji+' ':''}${t.name}</div><div style="color:var(--fg2)">${t.w}-${t.d}-${t.l}</div><div style="color:var(--good)">${t.pts}</div></div>`).join('')}`;
+  if (!ts.length) { tbl.innerHTML = '<div class="notice">no teams registered</div>'; }
+  else {
+    tbl.innerHTML = `<div class="srow" style="color:var(--fg3);font-size:10px"><div>#</div><div>team</div><div>W-D-L</div><div>pts</div></div>
+    ${ts.map((t,i)=>`<div class="srow">
+      <div style="color:var(--fg3)">${i+1}</div>
+      <div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color||t.colors?.[0]||'#888'};margin-right:5px"></span>${t.emoji?t.emoji+' ':''}${t.name}${i===0&&ts[0].pts>0?' 👑':''}</div>
+      <div style="color:var(--fg2)">${t.w}-${t.d}-${t.l}</div>
+      <div style="color:var(--good)">${t.pts}</div>
+    </div>`).join('')}`;
+  }
+
+  // POTM leaderboard
+  const lb = document.getElementById('potmLeaderboard'); if (!lb) return;
+  const counts = state.potmCounts || {};
+  const entries = Object.entries(counts)
+    .map(([pid, n]) => ({ p: state.players.find(pl=>pl.id===pid), n }))
+    .filter(e => e.p)
+    .sort((a,b) => b.n - a.n)
+    .slice(0, 10);
+  if (!entries.length) { lb.innerHTML = '<div class="notice">no player of the match awards yet</div>'; return; }
+  lb.innerHTML = entries.map((e,i) => `<div class="srow" style="grid-template-columns:22px 1fr 60px 60px">
+    <div style="color:var(--fg3)">${i+1}</div>
+    <div>${e.p.name} <span style="font-size:10px;color:var(--fg3)">${e.p.pos}</span></div>
+    <div style="color:var(--warn)">${stars(calcScore(e.p))}</div>
+    <div style="color:var(--good)">×${e.n}</div>
+  </div>`).join('');
 }
 
 function renderOwner() {
   const li = document.getElementById('leagueNameInput'); if (li) li.value = state.leagueName||'';
+  const si = document.getElementById('seasonNameInput'); if (si) si.value = state.seasonName||'';
+  const ws = document.getElementById('windowStatus');
+  const wb = document.getElementById('windowToggleBtn');
+  const open = state.transferWindowOpen !== false;
+  if (ws) { ws.textContent = open ? 'open' : 'closed'; ws.style.color = open ? 'var(--good)' : 'var(--danger)'; }
+  if (wb) { wb.textContent = open ? 'close window' : 'open window'; wb.className = open ? 'danger' : 'good'; }
   renderWeightEditor();
   renderOwnerTeams();
+  renderInjuryManager();
   renderPlayerEditor();
+}
+
+function toggleTransferWindow() {
+  state.transferWindowOpen = state.transferWindowOpen === false ? true : false;
+  saveState(); renderOwner(); renderDraft();
+  flash(`transfer window ${state.transferWindowOpen !== false ? 'opened' : 'closed'}`);
+}
+
+function renderInjuryManager() {
+  const el = document.getElementById('injuryManager'); if (!el) return;
+  const allDrafted = Object.entries(state.draftedBy).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+  if (!allDrafted.length) { el.innerHTML = '<div class="notice">no players drafted yet</div>'; return; }
+  const injuries = state.injuries || {};
+  el.innerHTML = `<div style="font-size:10px;color:var(--fg3);margin-bottom:10px;letter-spacing:.05em">mark players as injured — they will be excluded from simulations until cleared</div>` +
+    allDrafted.map(p => {
+      const inj = injuries[p.id];
+      const tid = state.draftedBy[p.id];
+      const team = state.teams.find(t=>t.id===tid);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;font-size:12px">${p.name} <span style="color:var(--fg3);font-size:10px">${p.pos}</span> <span style="color:var(--fg3);font-size:10px">// ${team?team.name:''}</span></div>
+        ${inj
+          ? `<span style="color:var(--danger);font-size:10px;margin-right:4px">🤕 injured</span><button style="padding:3px 10px;font-size:10px;border-color:var(--good);color:var(--good)" onclick="clearInjury('${p.id}')">clear</button>`
+          : `<button style="padding:3px 10px;font-size:10px;border-color:var(--danger);color:var(--danger)" onclick="markInjured('${p.id}')">injure</button>`
+        }
+      </div>`;
+    }).join('');
+}
+
+function markInjured(pid) {
+  if (!state.injuries) state.injuries = {};
+  state.injuries[pid] = true;
+  saveState(); renderInjuryManager(); renderTeams(); renderPlayers();
+  flash('player marked injured');
+}
+
+function clearInjury(pid) {
+  if (state.injuries) delete state.injuries[pid];
+  saveState(); renderInjuryManager(); renderTeams(); renderPlayers();
+  flash('injury cleared');
+}
+
+function saveSettings() {
+  state.leagueName = document.getElementById('leagueNameInput').value.trim() || 'the unworld cup';
+  state.seasonName = document.getElementById('seasonNameInput').value.trim();
+  saveState(); render(); flash('settings saved');
 }
 
 function renderWeightEditor() {
@@ -1040,11 +1192,6 @@ function removePlayer(i) {
   renderPlayerEditor();
 }
 function savePlayers() { saveState(); render(); flash('players saved'); }
-
-function saveSettings() {
-  state.leagueName = document.getElementById('leagueNameInput').value.trim() || 'the unworld cup';
-  saveState(); render(); flash('settings saved');
-}
 
 function resetLeague() {
   if (!confirm('reset all teams, drafts, and games? players and settings remain.')) return;
@@ -1214,8 +1361,12 @@ function runSim() {
     const a = state.teams.find(t=>t.id===aId);
     if (!h || !a) continue;
 
-    const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
-    const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id).map(([pid])=>state.players.find(p=>p.id===pid)).filter(Boolean);
+    const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id)
+      .map(([pid])=>state.players.find(p=>p.id===pid))
+      .filter(p => p && !(state.injuries||{})[p.id]); // exclude injured
+    const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id)
+      .map(([pid])=>state.players.find(p=>p.id===pid))
+      .filter(p => p && !(state.injuries||{})[p.id]); // exclude injured
     const hR = hRaw.map(p => applyWeather(p, weather, state.players));
     const aR = aRaw.map(p => applyWeather(p, weather, state.players));
 
@@ -1246,7 +1397,8 @@ function runSim() {
     const aDef = aP.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
     const aGk  = aP.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
 
-    const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20;
+    const homeBoost = Math.floor(Math.random()*10) + 3; // 3–12 point home advantage
+    const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20 + homeBoost;
     const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
 
     const g = {
@@ -1264,6 +1416,13 @@ function runSim() {
       }
     };
     g.report = generateReport(g);
+    // track POTM
+    if (g._potmId) {
+      if (!state.potmCounts) state.potmCounts = {};
+      state.potmCounts[g._potmId] = (state.potmCounts[g._potmId]||0) + 1;
+      g.potmId = g._potmId;
+      delete g._potmId;
+    }
     state.games.push(g);
   }
 
@@ -1284,6 +1443,10 @@ function showTeamModal(existing) {
       <div class="modal-title">${isNew?'create a new team':'edit team'}</div>
       <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">team name</div>
         <input type="text" id="tname" value="${existing?existing.name:''}" placeholder="the void walkers" maxlength="32"></div>
+      <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">manager name</div>
+        <input type="text" id="tmanager" value="${existing?existing.manager||'':''}" placeholder="e.g. rook ashfield" maxlength="40"></div>
+      <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">home ground</div>
+        <input type="text" id="tground" value="${existing?existing.homeGround||'':''}" placeholder="e.g. null arena" maxlength="40"></div>
       <div style="margin-bottom:10px"><div class="elabel" style="margin-bottom:5px">motto</div>
         <input type="text" id="tmotto" value="${existing?existing.motto||'':''}" placeholder="from nothing, everything" maxlength="60"></div>
       <div style="margin-bottom:14px"><div class="elabel" style="margin-bottom:6px">team color (pick one)</div>
@@ -1311,17 +1474,19 @@ function saveTeam(isNew, existingId) {
   const name = document.getElementById('tname').value.trim();
   if (!name) { flash('team needs a name'); return; }
   const motto = document.getElementById('tmotto').value.trim();
+  const manager = document.getElementById('tmanager').value.trim();
+  const homeGround = document.getElementById('tground').value.trim();
   const colorEl = document.querySelector('.sw.sel');
   const color = colorEl ? colorEl.dataset.c : '#e8e8e8';
   const emojiEl = [...document.querySelectorAll('[data-e]')].find(e => e.style.borderColor && e.style.borderColor !== 'transparent');
   const emoji = emojiEl ? emojiEl.dataset.e : '';
   if (isNew) {
     const id = 't'+Date.now();
-    state.teams.push({id, name, motto, color, emoji, colors:[color]});
+    state.teams.push({id, name, motto, manager, homeGround, color, emoji, colors:[color]});
     sessionStorage.setItem('uwc_myteam', id);
   } else {
     const idx = state.teams.findIndex(t=>t.id===existingId);
-    if (idx>=0) state.teams[idx] = {id:existingId, name, motto, color, emoji, colors:[color]};
+    if (idx>=0) state.teams[idx] = {id:existingId, name, motto, manager, homeGround, color, emoji, colors:[color]};
   }
   saveState(); closeModal(); render();
 }
