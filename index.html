@@ -419,70 +419,92 @@ function generateReport(game) {
   return parts.join(' ');
 }
 
+// Player names and positions only — stats are generated procedurally
 const RAW = [
-  // attackers (~42 — was 64, moved ~22 to midfielder)
-  ['Pissboy','attacker',82,90,44,75,80],['Hot Napoleon','attacker',12,85,40,78,72],
-  ['Kael Dusk','attacker',91,87,35,72,68],['Oryn Fell','attacker',79,84,42,77,74],
-  ['Morwenna Ux','attacker',84,89,37,81,69],['Ash Pendry','attacker',80,86,41,76,73],
-  ['Solene Drax','attacker',83,88,39,79,71],['Wren Hallow','attacker',78,83,43,74,75],
-  ['Aldric Vane','attacker',86,91,36,78,67],['Cleo Bask','attacker',81,85,40,80,72],
-  ['Edda Lorn','attacker',87,90,38,77,70],['Zenn Pallor','attacker',83,87,41,78,73],
-  ['Tavia Seld','attacker',80,84,44,76,76],['Lux Pallid','attacker',85,89,37,79,69],
-  ['Corvus Fell','attacker',82,86,42,77,74],['Sera Pell','attacker',79,83,44,75,77],
-  ['Calix Drake','attacker',84,88,38,80,71],['Pip Mallow','attacker',77,82,45,73,78],
-  ['Flax Oner','attacker',86,90,36,78,68],['Rook Pyre','attacker',83,87,40,77,72],
-  ['Solen Ark','attacker',81,85,41,76,73],['Cade Fell','attacker',85,89,37,79,70],
-  ['Lore Vaunt','attacker',80,84,43,75,75],['Idris Nox','attacker',84,88,39,78,71],
-  ['Orin Veck','attacker',82,86,41,77,73],['Bray Noll','attacker',79,83,44,76,76],
-  ['Caer Vult','attacker',86,91,36,80,67],['Mave Thorn','attacker',81,85,42,75,74],
-  ['Lynd Brae','attacker',83,87,40,77,72],['Ren Vosk','attacker',85,89,38,79,69],
-  ['Tarn Orle','attacker',80,84,43,76,75],['Cren Flax','attacker',84,88,39,78,71],
-  ['Yore Fell','attacker',82,86,42,77,73],['Drift Mako','attacker',95,72,55,66,65],
-  ['Soot Harrow','attacker',93,61,48,68,63],['Cleft Rue','attacker',87,66,51,73,67],
-  ['Iris Nox','attacker',91,63,53,69,64],['Caspian Fell','attacker',89,67,50,75,66],
-  ['Finch Morrow','attacker',92,64,49,71,62],['Seren Moth','attacker',86,69,54,76,69],
-  ['Mast Orwen','attacker',90,62,51,70,65],['Briar Nex','attacker',94,65,47,67,61],
-  // midfielders (~22 from attackers + ~12 from defenders = ~34)
-  ['Sage Drift','midfielder',76,72,62,84,74],['Gorse Wray','midfielder',74,68,65,86,72],
-  ['Elke Trave','midfielder',75,70,63,85,73],['Nym Silt','midfielder',77,71,61,83,75],
-  ['Lorn Hawse','midfielder',73,69,66,87,71],['Vesper Nole','midfielder',78,73,60,82,74],
-  ['Cord Vestige','midfielder',72,67,67,88,70],['Bael Sorn','midfielder',76,72,62,84,73],
-  ['Thrice Weld','midfielder',74,70,64,85,72],['Drex Callow','midfielder',77,71,63,83,74],
-  ['Wick Sable','midfielder',75,68,65,86,71],['Skell Rime','midfielder',73,72,62,84,75],
-  ['Frome Celd','midfielder',78,69,61,87,72],['Tule Sorrel','midfielder',76,73,63,83,73],
-  ['Pelk Reeve','midfielder',74,70,65,85,71],['Seld Riven','midfielder',77,71,62,86,74],
-  ['Coll Wend','midfielder',75,68,64,84,72],['Fael Hern','midfielder',73,72,66,83,75],
-  ['Cord Lode','midfielder',78,70,61,87,71],['Brae Seld','midfielder',76,69,63,85,73],
-  ['Vore Nept','midfielder',74,73,65,82,74],['Silt Morven','midfielder',77,71,62,86,72],
-  ['Riven Shore','midfielder',72,68,66,88,70],['Trace Linden','midfielder',75,72,64,84,73],
-  ['Kern Ashfall','midfielder',74,70,65,85,72],['Mira Cull','midfielder',76,68,63,87,71],
-  ['Dray Morne','midfielder',73,71,66,83,74],['Breck Wold','midfielder',77,69,62,86,72],
-  ['Oast Miren','midfielder',75,72,64,84,73],['Thane Corr','midfielder',74,70,65,85,71],
-  ['Arda Peil','midfielder',78,68,61,87,74],['Cess Dray','midfielder',73,73,66,82,75],
-  ['Maeve Null','midfielder',76,71,63,85,72],['Yael Morn','midfielder',75,69,65,86,73],
-  // defenders (~24 — was 36, moved ~12 to midfielder)
-  ['Calla Rune','defender',70,65,80,88,77],['Sable Piers','defender',55,60,94,72,85],
-  ['Crest Vane','defender',60,55,91,65,88],['Pale Wren','defender',51,48,90,69,86],
-  ['Vael Croft','defender',58,52,88,71,89],['Thorn Massy','defender',52,50,93,70,87],
-  ['Bram Vole','defender',56,54,89,72,88],['Dun Carraway','defender',53,51,92,68,90],
-  ['Leven Quay','defender',59,53,87,73,85],['Pyke Null','defender',54,49,95,67,91],
-  ['Rowan Grex','defender',57,55,90,74,86],['Hal Voss','defender',50,47,93,66,89],
-  ['Penn Orris','defender',51,48,94,67,90],['Donn Wrace','defender',58,54,88,72,87],
-  ['Asen Mire','defender',53,51,92,69,89],['Hasp Drove','defender',56,53,90,73,85],
-  ['Foss Amble','defender',59,56,87,74,84],['Drex Pell','defender',54,50,93,68,90],
-  ['Ness Croft','defender',57,54,89,73,86],['Gale Dross','defender',55,52,91,70,88],
-  ['Pax Aven','defender',52,49,94,67,91],['Wael Mist','defender',58,55,88,73,85],
-  ['Eld Sorn','defender',53,51,92,70,89],['Drex Hale','defender',56,53,90,72,87],
-  // goalies
-  ['Nox Quill','goalie',45,40,98,70,90],['Cinder Page','goalie',42,38,96,68,92],
-  ['Moth Drelk','goalie',48,42,97,66,91],['Vess Hollow','goalie',44,39,99,65,93],
-  ['Pale Gate','goalie',40,36,98,63,94],['Orm Sunder','goalie',43,41,96,67,90],
-  ['Threl Void','goalie',46,38,97,64,92],['Sorn Kassel','goalie',41,37,99,66,93],
-  ['Brynn Dusk','goalie',47,43,95,69,89],['Vel Arren','goalie',44,40,98,65,91],
+  ['Pissboy','attacker'],['Hot Napoleon','attacker'],
+  ['Kael Dusk','attacker'],['Oryn Fell','attacker'],
+  ['Morwenna Ux','attacker'],['Ash Pendry','attacker'],
+  ['Solene Drax','attacker'],['Wren Hallow','attacker'],
+  ['Aldric Vane','attacker'],['Cleo Bask','attacker'],
+  ['Edda Lorn','attacker'],['Zenn Pallor','attacker'],
+  ['Tavia Seld','attacker'],['Lux Pallid','attacker'],
+  ['Corvus Fell','attacker'],['Sera Pell','attacker'],
+  ['Calix Drake','attacker'],['Pip Mallow','attacker'],
+  ['Flax Oner','attacker'],['Rook Pyre','attacker'],
+  ['Solen Ark','attacker'],['Cade Fell','attacker'],
+  ['Lore Vaunt','attacker'],['Idris Nox','attacker'],
+  ['Orin Veck','attacker'],['Bray Noll','attacker'],
+  ['Caer Vult','attacker'],['Mave Thorn','attacker'],
+  ['Lynd Brae','attacker'],['Ren Vosk','attacker'],
+  ['Tarn Orle','attacker'],['Cren Flax','attacker'],
+  ['Yore Fell','attacker'],['Drift Mako','attacker'],
+  ['Soot Harrow','attacker'],['Cleft Rue','attacker'],
+  ['Iris Nox','attacker'],['Caspian Fell','attacker'],
+  ['Finch Morrow','attacker'],['Seren Moth','attacker'],
+  ['Mast Orwen','attacker'],['Briar Nex','attacker'],
+  ['Sage Drift','midfielder'],['Gorse Wray','midfielder'],
+  ['Elke Trave','midfielder'],['Nym Silt','midfielder'],
+  ['Lorn Hawse','midfielder'],['Vesper Nole','midfielder'],
+  ['Cord Vestige','midfielder'],['Bael Sorn','midfielder'],
+  ['Thrice Weld','midfielder'],['Drex Callow','midfielder'],
+  ['Wick Sable','midfielder'],['Skell Rime','midfielder'],
+  ['Frome Celd','midfielder'],['Tule Sorrel','midfielder'],
+  ['Pelk Reeve','midfielder'],['Seld Riven','midfielder'],
+  ['Coll Wend','midfielder'],['Fael Hern','midfielder'],
+  ['Cord Lode','midfielder'],['Brae Seld','midfielder'],
+  ['Vore Nept','midfielder'],['Silt Morven','midfielder'],
+  ['Riven Shore','midfielder'],['Trace Linden','midfielder'],
+  ['Kern Ashfall','midfielder'],['Mira Cull','midfielder'],
+  ['Dray Morne','midfielder'],['Breck Wold','midfielder'],
+  ['Oast Miren','midfielder'],['Thane Corr','midfielder'],
+  ['Arda Peil','midfielder'],['Cess Dray','midfielder'],
+  ['Maeve Null','midfielder'],['Yael Morn','midfielder'],
+  ['Calla Rune','defender'],['Sable Piers','defender'],
+  ['Crest Vane','defender'],['Pale Wren','defender'],
+  ['Vael Croft','defender'],['Thorn Massy','defender'],
+  ['Bram Vole','defender'],['Dun Carraway','defender'],
+  ['Leven Quay','defender'],['Pyke Null','defender'],
+  ['Rowan Grex','defender'],['Hal Voss','defender'],
+  ['Penn Orris','defender'],['Donn Wrace','defender'],
+  ['Asen Mire','defender'],['Hasp Drove','defender'],
+  ['Foss Amble','defender'],['Drex Pell','defender'],
+  ['Ness Croft','defender'],['Gale Dross','defender'],
+  ['Pax Aven','defender'],['Wael Mist','defender'],
+  ['Eld Sorn','defender'],['Drex Hale','defender'],
+  ['Nox Quill','goalie'],['Cinder Page','goalie'],
+  ['Moth Drelk','goalie'],['Vess Hollow','goalie'],
+  ['Pale Gate','goalie'],['Orm Sunder','goalie'],
+  ['Threl Void','goalie'],['Sorn Kassel','goalie'],
+  ['Brynn Dusk','goalie'],['Vel Arren','goalie'],
 ];
 
+// Seeded RNG so stats are stable across reloads (same name = same stats always)
+function _nameHash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = (h * 33 ^ str.charCodeAt(i)) >>> 0;
+  return h;
+}
+function _seededStat(seed, offset) {
+  // Produces a value skewed toward 50–100: take max of two rolls
+  const h = (_nameHash(seed + offset) % 10000) / 10000; // 0..1
+  const h2 = (_nameHash(seed + offset + 'b') % 10000) / 10000;
+  const raw = Math.max(h, h2); // skews toward higher values
+  return Math.round(raw * 100); // 0–100, skewed high
+}
+
 function makePlayers() {
-  return RAW.map((r,i) => ({id:'p'+(i+1), name:r[0], pos:r[1], spd:r[2], str:r[3], def:r[4], vis:r[5], stm:r[6]}));
+  return RAW.map((r, i) => {
+    const id = 'p' + (i + 1);
+    const name = r[0], pos = r[1];
+    return {
+      id, name, pos,
+      spd: _seededStat(name, 'spd'),
+      str: _seededStat(name, 'str'),
+      def: _seededStat(name, 'def'),
+      vis: _seededStat(name, 'vis'),
+      stm: _seededStat(name, 'stm'),
+    };
+  });
 }
 
 function _defaultStats() {
@@ -582,9 +604,17 @@ function _pidHash(pid) {
 function playerValue(p) {
   if (p.customValue !== undefined && p.customValue !== null && p.customValue !== '') return +p.customValue;
   const sc = calcScore(p);
-  const starCount = Math.max(1, Math.round((sc / 100) * 5));
-  const variance = (_pidHash(p.id) / 20000) * 20 - 10;
-  return Math.round(Math.min(35, Math.max(1, starCount * 5 + variance)) * 10) / 10;
+  // Find min and max scores across all players for comparative scaling
+  const allScores = state.players.map(pl => calcScore(pl));
+  const minSc = Math.min(...allScores);
+  const maxSc = Math.max(...allScores);
+  const range = maxSc - minSc || 1;
+  // Normalise this player's score to 0–1 then scale to $5M–$20M
+  const normalised = (sc - minSc) / range;
+  const base = 5 + normalised * 15; // $5M to $20M
+  // Add small stable per-player variance of ±$1M
+  const variance = (_pidHash(p.id) / 20000) * 2 - 1;
+  return Math.round(Math.min(20, Math.max(5, base + variance)) * 10) / 10;
 }
 
 function teamSpent(teamId) {
