@@ -1206,31 +1206,32 @@ function ownerDeleteTeam(id) {
 
 function renderPlayerEditor() {
   const ed = document.getElementById('playerEditor'); if (!ed) return;
-  ed.innerHTML = state.players.map((p,pi) => `<div class="card" style="margin-bottom:8px">
-    <div class="erow"><div class="elabel">name</div><input type="text" value="${p.name}" onchange="state.players[${pi}].name=this.value"></div>
-    <div class="erow"><div class="elabel">position</div><select onchange="state.players[${pi}].pos=this.value"><option value="attacker"${p.pos==='attacker'?' selected':''}>attacker</option><option value="midfielder"${p.pos==='midfielder'?' selected':''}>midfielder</option><option value="defender"${p.pos==='defender'?' selected':''}>defender</option><option value="goalie"${p.pos==='goalie'?' selected':''}>goalie</option></select></div>
-    <div class="erow"><div class="elabel">value ($M)</div><input type="number" min="0.1" max="99" step="0.1" value="${p.customValue !== undefined && p.customValue !== null && p.customValue !== '' ? p.customValue : playerValue(p).toFixed(1)}" onchange="state.players[${pi}].customValue=+this.value"></div>
-    ${state.stats.map(s=>`<div class="erow"><div class="elabel">${s.name}</div><input type="number" min="0" max="100" value="${p[s.id]||0}" onchange="state.players[${pi}]['${s.id}']=+this.value"></div>`).join('')}
-    <div class="brow"><button class="danger" onclick="removePlayer(${pi})">remove</button></div>
+  ed.innerHTML = state.players.map((p) => `<div class="card" style="margin-bottom:8px">
+    <div class="erow"><div class="elabel">name</div><input type="text" value="${p.name}" onchange="updatePlayer('${p.id}','name',this.value)"></div>
+    <div class="erow"><div class="elabel">position</div><select onchange="updatePlayer('${p.id}','pos',this.value)"><option value="attacker"${p.pos==='attacker'?' selected':''}>attacker</option><option value="midfielder"${p.pos==='midfielder'?' selected':''}>midfielder</option><option value="defender"${p.pos==='defender'?' selected':''}>defender</option><option value="goalie"${p.pos==='goalie'?' selected':''}>goalie</option></select></div>
+    <div class="erow"><div class="elabel">value ($M)</div><input type="number" min="0.1" max="99" step="0.1" value="${p.customValue !== undefined && p.customValue !== null && p.customValue !== '' ? p.customValue : playerValue(p).toFixed(1)}" onchange="updatePlayer('${p.id}','customValue',+this.value)"></div>
+    ${state.stats.map(s=>`<div class="erow"><div class="elabel">${s.name}</div><input type="number" min="0" max="100" value="${p[s.id]||0}" onchange="updatePlayer('${p.id}','${s.id}',+this.value)"></div>`).join('')}
+    <div class="brow"><button class="danger" onclick="removePlayer('${p.id}')">remove</button></div>
   </div>`).join('');
+}
+
+function updatePlayer(id, field, value) {
+  const p = state.players.find(pl => pl.id === id);
+  if (p) p[field] = value;
 }
 
 function addPlayer() {
   const id = 'p'+Date.now(); const blank = {};
   state.stats.forEach(s=>blank[s.id]=50);
   state.players.push({id, name:'New Player', pos:'attacker', ...blank});
-  renderPlayerEditor();
+  saveState(); render(); flash('player added — edit stats then save');
 }
-function addPlayer() {
-  const id = 'p'+Date.now(); const blank = {};
-  state.stats.forEach(s=>blank[s.id]=50);
-  state.players.push({id, name:'New Player', pos:'attacker', ...blank});
-  saveState(); render(); flash('player added — edit name and stats below');
-}
-function removePlayer(i) {
-  const pid = state.players[i].id;
-  state.players.splice(i, 1);
-  delete state.draftedBy[pid];
+
+function removePlayer(id) {
+  const idx = state.players.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  state.players.splice(idx, 1);
+  delete state.draftedBy[id];
   saveState(); render(); flash('player removed');
 }
 function savePlayers() { saveState(); render(); flash('players saved'); }
