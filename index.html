@@ -1220,11 +1220,47 @@ function updatePlayer(id, field, value) {
   if (p) p[field] = value;
 }
 
-function addPlayer() {
-  const id = 'p'+Date.now(); const blank = {};
-  state.stats.forEach(s=>blank[s.id]=50);
-  state.players.push({id, name:'New Player', pos:'attacker', ...blank});
-  saveState(); render(); flash('player added — edit stats then save');
+function saveCustomPlayer() {
+  const nameInp = document.getElementById('cpName');
+  const posInp = document.getElementById('cpPos');
+  if (!nameInp || !posInp) return;
+
+  const name = nameInp.value.trim();
+  const pos = posInp.value;
+  if (!name) { alert('Enter a player name.'); return; }
+
+  // Generate random stats
+  const p = {
+    id: 'p_' + Date.now() + '_' + Math.floor(Math.random()*1000), // Unique ID string
+    name,
+    pos,
+    str: Math.floor(Math.random() * 31) + 50, // 50-80
+    spd: Math.floor(Math.random() * 31) + 50,
+    def: Math.floor(Math.random() * 31) + 50,
+    stm: Math.floor(Math.random() * 31) + 50,
+    teamId: null // Unassigned so they appear in the draft pool
+  };
+
+  // --- CHANGED HERE: Push directly to Firebase instead of local state ---
+  if (window._fbRef) {
+    // If Firebase is live, find the next available index and save it
+    const nextIdx = state.players ? state.players.length : 0;
+    
+    // Import the global firebase database instance and update it
+    const { getDatabase, ref, set } = window.FirebaseDB; 
+    set(ref(getDatabase(), `league/players/${nextIdx}`), p)
+      .then(() => {
+        closeModal();
+        flash(`${name} summoned to the mortal realm`);
+      })
+      .catch(err => alert("Summoning failed: " + err.message));
+  } else {
+    // Fallback if you are testing offline
+    if (!state.players) state.players = [];
+    state.players.push(p);
+    closeModal();
+    render();
+  }
 }
 
 function removePlayer(id) {
