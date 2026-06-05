@@ -1262,7 +1262,9 @@ function saveCustomPlayer() {
     render();
   }
 }
-
+// ⬇️ ADD THIS LINE RIGHT HERE ⬇️
+const addPlayer = saveCustomPlayer;
+  
 function removePlayer(id) {
   const idx = state.players.findIndex(p => p.id === id);
   if (idx < 0) return;
