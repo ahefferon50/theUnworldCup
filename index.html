@@ -1284,8 +1284,46 @@ function removePlayer(id) {
   delete state.draftedBy[id];
   saveState(); render(); flash('player removed');
 }
-function savePlayers() { saveState(); render(); flash('players saved'); }
+function savePlayers() {
+  const nameInp = document.getElementById('cpName');
+  const posInp = document.getElementById('cpPos');
+  if (!nameInp || !posInp) return;
 
+  const name = nameInp.value.trim();
+  const pos = posInp.value;
+  if (!name) { alert('Enter a player name.'); return; }
+
+  // 1. Generate clean, properly structured stats
+  const p = {
+    id: 'p_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+    name,
+    pos,
+    str: Math.floor(Math.random() * 31) + 50, // 50-80
+    spd: Math.floor(Math.random() * 31) + 50,
+    def: Math.floor(Math.random() * 31) + 50,
+    vis: Math.floor(Math.random() * 31) + 50,
+    stm: Math.floor(Math.random() * 31) + 50
+  };
+
+  // 2. Add it to our local tracking array safely
+  if (!state.players) state.players = [];
+  state.players.push(p);
+
+  // 3. Sync the updated state object directly up to Firebase 
+  if (window._fbRef && window._fbSet) {
+    window._fbSet(window._fbRef, state)
+      .then(() => {
+        closeModal();
+        flash(`${name} summoned to the mortal realm`);
+      })
+      .catch(err => alert("Summoning failed: " + err.message));
+  } else {
+    // Local fallback if testing completely offline
+    saveState();
+    closeModal();
+    render();
+  }
+}
 function resetLeague() {
   if (!confirm('reset all teams, drafts, and games? players and settings remain.')) return;
   state.teams = []; state.draftedBy = {}; state.games = []; state.roundNum = 0;
