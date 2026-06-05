@@ -1221,11 +1221,17 @@ function addPlayer() {
   state.players.push({id, name:'New Player', pos:'attacker', ...blank});
   renderPlayerEditor();
 }
+function addPlayer() {
+  const id = 'p'+Date.now(); const blank = {};
+  state.stats.forEach(s=>blank[s.id]=50);
+  state.players.push({id, name:'New Player', pos:'attacker', ...blank});
+  saveState(); render(); flash('player added — edit name and stats below');
+}
 function removePlayer(i) {
   const pid = state.players[i].id;
   state.players.splice(i, 1);
   delete state.draftedBy[pid];
-  renderPlayerEditor();
+  saveState(); render(); flash('player removed');
 }
 function savePlayers() { saveState(); render(); flash('players saved'); }
 
