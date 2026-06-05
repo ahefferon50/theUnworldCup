@@ -580,7 +580,19 @@ function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
   return Math.round(state.stats.reduce((a,s)=>a+(p[s.id]||0)*s.weight,0) / total);
 }
-function stars(sc) { const n=Math.round((sc/100)*5); return '★'.repeat(Math.max(1,n))+'☆'.repeat(5-Math.max(1,n)); }
+function stars(sc) {
+  // Safeguard: Ensure the calculated score falls safely between 0 and 100
+  if (isNaN(sc) || sc === null || sc === undefined) sc = 50;
+  
+  let n = Math.round((sc / 100) * 5);
+  n = Math.max(0, Math.min(5, n)); // Forces 'n' to strictly be 0, 1, 2, 3, 4, or 5
+  
+  const filledStars = '★'.repeat(n);
+  const emptyStars = '☆'.repeat(5 - n); // Guaranteed to never be a negative number now!
+  
+  return filledStars + emptyStars;
+}
+  
 function posClass(pos) { return pos==='attacker'?'pos-atk':pos==='midfielder'?'pos-mid':pos==='defender'?'pos-def':'pos-gk'; }
 
 function rosterCountsFor(teamId) {
