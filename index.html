@@ -1672,23 +1672,15 @@ function checkOwnerPw() {
     inp.focus();
   }
 }
-
-let ft;
-let ft;
   
+let ft;
 function flash(msg) {
-
   const t = document.getElementById('ticker');
-
   t.textContent = '// ' + msg;
-
   t.style.color = 'var(--good)';
-
   clearTimeout(ft);
-
   ft = setTimeout(() => { updateTicker(); t.style.color = ''; }, 2400);
-
-} 
+}
 
 loadState();
 render();
