@@ -1675,29 +1675,21 @@ function checkOwnerPw() {
 
 let ft;
 let ft;
+  
 function flash(msg) {
-  const t = document.getElementById('ticker');
-  
-  // 1. Identify your special word or phrase
-  const specialPhrase = "The Blood Sport Day Draws Ever Closer";
-  
-  // 2. Check if the incoming message contains that phrase
-  if (msg.includes(specialPhrase)) {
-    // Replace the phrase with a colorful version using a span tag
-    const colorfulPhrase = `<span style="color: #8b0000; font-weight: bold;">${specialPhrase}</span>`;    
-    const newMsg = msg.replace(specialPhrase, colorfulPhrase);
-    
-    t.innerHTML = '// ' + newMsg;
-  } else {
-    // Fallback for standard messages
-    t.textContent = '// ' + msg;
-  }
 
-  // Your original color and timeout handling
+  const t = document.getElementById('ticker');
+
+  t.textContent = '// ' + msg;
+
   t.style.color = 'var(--good)';
+
   clearTimeout(ft);
+
   ft = setTimeout(() => { updateTicker(); t.style.color = ''; }, 2400);
-}
+
+} 
+
 loadState();
 render();
 </script>
