@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,6 +99,12 @@ button:disabled{opacity:.35;pointer-events:none}
 .wrow{display:grid;grid-template-columns:1fr 100px 36px;gap:12px;align-items:center;margin-bottom:12px}
 .wnum{font-size:13px;color:var(--warn);text-align:right;font-weight:700}
 .divider{border:none;border-top:1px solid var(--border);margin:22px 0}
+.bloodsport-active #tab-league{background:#1a0000}
+.bloodsport-active #tab-league .slabel{color:#cc3333}
+.bloodsport-active #tab-league .round-hdr{color:#ff4444}
+.bloodsport-active #tab-league .fixture{border-bottom-color:#3a0000}
+.narrowing-active .pc{opacity:0.75}
+.event-banner{padding:10px 16px;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;text-align:center;border-bottom:1px solid}
 .notice{font-size:11px;color:var(--fg3);padding:18px;border:1px dashed var(--border);text-align:center;letter-spacing:.05em}
 .pill{display:inline-block;font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--border);color:var(--fg3)}
 .pill.live{border-color:var(--good);color:var(--good)}
@@ -265,6 +270,41 @@ button:disabled{opacity:.35;pointer-events:none}
         <button class="good" onclick="addPlayer()">+ add player</button>
         <button class="primary" onclick="savePlayers()">save all players</button>
       </div>
+      <div class="divider"></div>
+      <div class="slabel">special events</div>
+      <div class="card">
+        <div id="eventStatus" style="margin-bottom:12px"></div>
+        <div id="eventPicker" style="display:flex;flex-direction:column;gap:8px">
+          <div style="border:1px solid var(--border);padding:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--danger);margin-bottom:4px">🔥 feast of the beast that has no name</div>
+            <div style="font-size:11px;color:var(--fg2);margin-bottom:8px;line-height:1.6">one-off match between all rival pairs. the losing team must choose a player to sacrifice — permanently deleted. that team recovers the player's transfer value. sacrifice choice goes to the losing team, not the owner.</div>
+            <button class="danger" onclick="startEvent('feast')">start feast</button>
+          </div>
+          <div style="border:1px solid var(--border);padding:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--danger);margin-bottom:4px">🩸 blood sport day</div>
+            <div style="font-size:11px;color:var(--fg2);margin-bottom:8px;line-height:1.6">wins scored during this event count as triple points. past results are unaffected. the league page runs red.</div>
+            <button class="danger" onclick="startEvent('bloodsport')">start blood sport</button>
+          </div>
+          <div style="border:1px solid var(--border);padding:12px">
+            <div style="font-size:12px;font-weight:700;color:#cc88ff;margin-bottom:4px">🌀 the narrowing</div>
+            <div style="font-size:11px;color:var(--fg2);margin-bottom:8px;line-height:1.6">for this round only, every player's stats are halved. the weakest teams suddenly become viable. nobody can explain it. the schedule continues as normal.</div>
+            <button class="danger" onclick="startEvent('narrowing')">begin the narrowing</button>
+          </div>
+          <div style="border:1px solid var(--border);padding:12px">
+            <div style="font-size:12px;font-weight:700;color:#ffcc44;margin-bottom:4px">👁 the inversion</div>
+            <div style="font-size:11px;color:var(--fg2);margin-bottom:8px;line-height:1.6">for one round, attackers play as defenders and defenders play as attackers. goalies are unaffected. midfielders are briefly confused but adapt. lasts one simulated round then ends automatically.</div>
+            <button class="danger" onclick="startEvent('inversion')">begin the inversion</button>
+          </div>
+          <div style="border:1px solid var(--border);padding:12px">
+            <div style="font-size:12px;font-weight:700;color:#44ffdd;margin-bottom:4px">⚡ the reckoning</div>
+            <div style="font-size:11px;color:var(--fg2);margin-bottom:8px;line-height:1.6">all teams play every other team this round, regardless of the schedule. the standings are reshuffled. does not affect the regular schedule going forward.</div>
+            <button class="danger" onclick="startEvent('reckoning')">begin the reckoning</button>
+          </div>
+        </div>
+        <div class="brow" style="margin-top:14px">
+          <button class="danger" id="stopEventBtn" onclick="stopEvent()" style="display:none">stop event / return to normal</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -277,7 +317,7 @@ const COLORS = ['#ff4444','#ff6a00','#ffcc44','#c8ff44','#44ff88','#44ffdd','#44
 const EMOJIS = ['🦊','🐺','🦁','🐯','🐻','🦝','🐗','🦌','🐢','🦅','🦉','🦇','🐙','🦑','🦈','🐊','🦎','👾','🌵','🌚','👻','🔮'];
 const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 
-const WASTELAND = ["What scar, what light, what fire","April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","How do you like your blue eyes boy mister death?","All is this wrong key, the lark sings","","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
+const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","How do you like your blue eyes boy mister death?","All is this wrong key, the lark sings","","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
 
 const OMINOUS = ["The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names. Proably for the best","The away team bus arrived. The away team was not on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","The monster that ate several players was adjucited to have not impacted the final result by a team of experts","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
 
@@ -580,6 +620,27 @@ function calcScore(p) {
   const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
   return Math.round(state.stats.reduce((a,s)=>a+(p[s.id]||0)*s.weight,0) / total);
 }
+
+// POTM boost: 5+ awards = 1 flame + 1 stat doubled, 10+ = 2 flames + 2 stats doubled
+function potmFlames(pid) {
+  const n = (state.potmCounts||{})[pid] || 0;
+  if (n >= 10) return '🔥🔥';
+  if (n >= 5)  return '🔥';
+  return '';
+}
+
+function calcScoreWithPotm(p) {
+  const n = (state.potmCounts||{})[p.id] || 0;
+  if (n < 5) return calcScore(p);
+  // Find which stat is highest and double it for scoring purposes
+  const fields = ['spd','str','def','vis','stm'];
+  const boosted = { ...p };
+  const sorted = [...fields].sort((a,b)=>(p[b]||0)-(p[a]||0));
+  boosted[sorted[0]] = Math.min(100, (p[sorted[0]]||0) * 2);
+  if (n >= 10 && sorted[1]) boosted[sorted[1]] = Math.min(100, (p[sorted[1]]||0) * 2);
+  const total = state.stats.reduce((a,b)=>a+b.weight,0) || 1;
+  return Math.round(state.stats.reduce((a,s)=>a+(boosted[s.id]||0)*s.weight,0) / total);
+}
 function stars(sc) {
   // Safeguard: Ensure the calculated score falls safely between 0 and 100
   if (isNaN(sc) || sc === null || sc === undefined) sc = 50;
@@ -661,9 +722,7 @@ function updateTicker() {
   if (!el) return;
 
   const doomPhrases = [
-    "// It's almost Blood Sport Day//",
     "// EX DURIS GLORIA //",
-    "// Blood Sport Day is in the Air //",
     "// THAT IS NOT DEAD WHICH CAN ETERNAL LIE //",
     "// كأس العالم للأمم المتحدة يتطلب نوعاً مختلفاً من التضحية//",
     "// ここには神はいない、いるのはバラーだけだ//",
@@ -705,13 +764,14 @@ function renderPlayers() {
   g.innerHTML = '';
   const list = playerFilter==='all' ? state.players : state.players.filter(p=>p.pos===playerFilter);
   list.forEach(p => {
-    const sc = calcScore(p);
+    const sc = calcScoreWithPotm(p);
+    const flames = potmFlames(p.id);
     const tid = state.draftedBy[p.id];
     const tm = tid ? state.teams.find(t=>t.id===tid) : null;
     const el = document.createElement('div');
     el.className = 'pc';
     const injured = (state.injuries||{})[p.id];
-    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}${injured?' <span style="color:var(--danger);font-size:9px">🤕</span>':''}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span>${tm ? ' // <span style="color:var(--fg3)">'+tm.name+'</span>' : ''}</div><div class="pst">${stars(sc)}</div><div style="font-size:11px;color:var(--warn);margin-bottom:4px">${fmtVal(playerValue(p))}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}`;
+    el.innerHTML = `<div class="psc">${sc}</div><div class="pn">${p.name}${flames ? ' <span style="color:var(--danger)">${flames}</span>' : ''}${injured?' <span style="color:var(--danger);font-size:9px">🤕</span>':''}</div><div class="pp"><span class="${posClass(p.pos)}">${p.pos}</span>${tm ? ' // <span style="color:var(--fg3)">'+tm.name+'</span>' : ''}</div><div class="pst">${stars(sc)}</div><div style="font-size:11px;color:var(--warn);margin-bottom:4px">${fmtVal(playerValue(p))}</div>${state.stats.map(s=>`<div class="sr"><span>${s.name}</span><span class="sv">${p[s.id]||0}</span></div>`).join('')}`;
     g.appendChild(el);
   });
 }
@@ -830,6 +890,7 @@ function undraft(pid) {
 }
 
 function renderTeams() {
+  applyEventStyling();
   const sec = document.getElementById('teamsSection'); if (!sec) return;
   const myTeamId = sessionStorage.getItem('uwc_myteam');
 
@@ -883,7 +944,7 @@ function renderTeams() {
           const p = players[i];
           const injured = p && (state.injuries||{})[p.id];
           if (p) {
-            out += `<div class="slot-card"><div><div style="font-size:12px;font-weight:700">${p.name}${injured?` <span style="color:var(--danger);font-size:9px">🤕 injured</span>`:''}</div><div style="font-size:10px;color:var(--warn)">${stars(calcScore(p))}</div></div></div>`;
+            out += `<div class="slot-card"><div><div style="font-size:12px;font-weight:700">${p.name}${potmFlames(p.id)?' <span style="color:var(--danger)">'+potmFlames(p.id)+'</span>':''}${injured?` <span style="color:var(--danger);font-size:9px">🤕 injured</span>`:''}</div><div style="font-size:10px;color:var(--warn)">${stars(calcScoreWithPotm(p))}</div></div></div>`;
           } else {
             out += `<div class="slot-empty">empty</div>`;
           }
@@ -903,16 +964,37 @@ function renderTeams() {
         </div>
       </div>` : '';
 
-      html += `<div class="card" style="border-color:${isMine?'#555':''}">
+      // Pending sacrifice check
+      const pendingSac = (state.pendingSacrifices||[]).find(s=>s.teamId===t.id);
+      const sacrificeBlock = (isMine && pendingSac) ? `
+        <div style="border:2px solid var(--danger);background:#1a0000;padding:14px;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:700;color:var(--danger);letter-spacing:.05em;margin-bottom:4px">🔥 THE BEAST DEMANDS ITS TRIBUTE</div>
+          <div style="font-size:10px;color:#cc4444;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px">// the feast has ended // your team has lost // one must remain behind //</div>
+          <div style="font-size:11px;color:var(--fg2);margin-bottom:14px;line-height:1.8;font-style:italic">"what are the roots that clutch, what branches grow out of this stony rubbish?" — choose who stays. the beast does not wait. the beast does not care. the beast is, in some sense, not even watching. and yet.</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${roster.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border:1px solid #3a0000">
+              <div>
+                <div style="font-size:12px;font-weight:700">${p.name}</div>
+                <div style="font-size:10px;color:var(--fg3)">${p.pos} &nbsp;|&nbsp; ${fmtVal(playerValue(p))}</div>
+              </div>
+              <button class="danger" style="padding:4px 12px;font-size:10px" onclick="sacrificePlayer('${p.id}','${t.id}')">sacrifice</button>
+            </div>`).join('')}
+          </div>
+          <div style="font-size:10px;color:#664444;margin-top:10px;font-style:italic;text-align:right">// your budget will recover their transfer value //</div>
+        </div>` : '';
+
+      html += `<div class="card" style="border-color:${pendingSac?'var(--danger)':isMine?'#555':''}">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
           ${dots}<div style="font-size:16px;font-weight:700">${t.name}</div>
           ${rivalBadge}
           ${isMine ? '<span class="pill live" style="margin-left:auto">your team</span>' : ''}
+          ${(pendingSac && !isMine) ? '<span style="font-size:9px;color:var(--danger);margin-left:auto;letter-spacing:.1em;text-transform:uppercase">🔥 awaiting sacrifice</span>' : ''}
         </div>
         ${t.manager ? `<div style="font-size:10px;color:var(--fg3);margin-bottom:2px;letter-spacing:.05em">mgr: ${t.manager}</div>` : ''}
         ${t.homeGround ? `<div style="font-size:10px;color:var(--fg3);margin-bottom:8px;letter-spacing:.05em">⬤ ${t.homeGround}</div>` : ''}
         ${t.motto ? `<div style="font-size:11px;color:var(--fg3);margin-bottom:10px;font-style:italic">"${t.motto}"</div>` : ''}
         ${historyHtml}
+        ${sacrificeBlock}
         ${tacticBar}
         ${rosterSection(atk,2,'attackers','atk')}
         ${rosterSection(mid,2,'midfielders','mid')}
@@ -949,7 +1031,40 @@ function toggleRound(r) {
   renderLeague();
 }
 
+function applyEventStyling() {
+  const ev = state.activeEvent;
+  const configs = {
+    bloodsport:     { bg:'#1a0000', text:'#cc3333', hdr:'#ff4444', fix:'#3a0000', bBg:'#3a0000', bColor:'var(--danger)', bBorder:'var(--danger)', msg:'🩸 blood sport day — wins scored this round count triple' },
+    feast:          { bg:'#1a0800', text:'#cc6633', hdr:'#ff8844', fix:'#3a1a00', bBg:'#3a1000', bColor:'#ff8844',      bBorder:'#ff8844',       msg:'🔥 feast of the beast — rival matches in progress' },
+    feast_sacrifice:{ bg:'#1a0800', text:'#cc6633', hdr:'#ff8844', fix:'#3a1a00', bBg:'#3a1000', bColor:'#ff8844',      bBorder:'#ff8844',       msg:'🔥 feast of the beast — go to the teams tab to make your sacrifice' },
+    narrowing:      { bg:'#1a001a', text:'#aa44cc', hdr:'#cc88ff', fix:'#2a002a', bBg:'#2a0033', bColor:'#cc88ff',      bBorder:'#cc88ff',       msg:'🌀 the narrowing — all player stats halved this round' },
+    inversion:      { bg:'#1a1a00', text:'#ccaa00', hdr:'#ffcc44', fix:'#2a2a00', bBg:'#2a2400', bColor:'#ffcc44',      bBorder:'#ffcc44',       msg:'👁 the inversion — attackers and defenders have swapped roles this round' },
+    reckoning:      { bg:'#001a1a', text:'#009999', hdr:'#44ffdd', fix:'#002a2a', bBg:'#002a2a', bColor:'#44ffdd',      bBorder:'#44ffdd',       msg:'⚡ the reckoning — all teams play all teams this round' },
+  };
+  const cfg = ev ? configs[ev] : null;
+  ['tab-league','tab-teams','tab-standings'].forEach(tabId => {
+    const tab = document.getElementById(tabId); if (!tab) return;
+    tab.style.background = cfg ? cfg.bg : '';
+    const bId = 'evBanner_' + tabId;
+    let eb = document.getElementById(bId);
+    if (cfg) {
+      if (!eb) { eb = document.createElement('div'); eb.id = bId; tab.insertBefore(eb, tab.firstChild); }
+      eb.style.cssText = `background:${cfg.bBg};color:${cfg.bColor};border-bottom:1px solid ${cfg.bBorder};padding:10px 16px;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;text-align:center`;
+      eb.textContent = cfg.msg;
+      tab.querySelectorAll('.slabel').forEach(el => el.style.color = cfg.text);
+      tab.querySelectorAll('.round-hdr').forEach(el => el.style.color = cfg.hdr);
+      tab.querySelectorAll('.fixture').forEach(el => el.style.borderBottomColor = cfg.fix);
+    } else {
+      if (eb) eb.remove();
+      tab.querySelectorAll('.slabel').forEach(el => el.style.color = '');
+      tab.querySelectorAll('.round-hdr').forEach(el => el.style.color = '');
+      tab.querySelectorAll('.fixture').forEach(el => el.style.borderBottomColor = '');
+    }
+  });
+}
+
 function renderLeague() {
+  applyEventStyling();
   // ── Schedule ────────────────────────────────────────────────────────────
   const sg = document.getElementById('scheduleGrid');
   if (sg) {
@@ -1080,9 +1195,23 @@ function renderLeague() {
         <div class="fix-report">${g.report||''}</div>
       </div>`).join('');
 
+    // Detect event label for this round
+    const eventLabels = {
+      isFeast:      { text: 'feast of the beast that has no name', emoji: '🔥', color: 'var(--danger)' },
+      isBloodsport: { text: 'blood sport day',                     emoji: '🩸', color: 'var(--danger)' },
+      isReckoning:  { text: 'the reckoning',                       emoji: '⚡', color: '#44ffdd' },
+    };
+    let eventLabel = '';
+    for (const [flag, info] of Object.entries(eventLabels)) {
+      if (rGames.some(g => g[flag])) {
+        eventLabel = ` &nbsp;<span style="color:${info.color};font-weight:500;font-size:10px;letter-spacing:.08em;text-transform:none">${info.emoji} ${info.text}</span>`;
+        break;
+      }
+    }
+
     return `
       <div class="round-hdr" onclick="toggleRound('${r}')">
-        <span>round ${r} &nbsp;<span style="color:var(--fg3);font-weight:400;letter-spacing:.05em;text-transform:none;font-size:10px">${matchCount} match${matchCount!==1?'es':''}</span></span>
+        <span>round ${r}${eventLabel} &nbsp;<span style="color:var(--fg3);font-weight:400;letter-spacing:.05em;text-transform:none;font-size:10px">${matchCount} match${matchCount!==1?'es':''}</span></span>
         <span class="round-toggle">${collapsed ? '▸' : '▾'}</span>
       </div>
       <div class="round-body${collapsed?' collapsed':''}">
@@ -1093,12 +1222,22 @@ function renderLeague() {
 }
 
 function renderStandings() {
+  applyEventStyling();
   const tbl = document.getElementById('standingsTable'); if (!tbl) return;
   const ts = state.teams.map(t => {
     const games = (state.games||[]).filter(g=>g.homeId===t.id||g.awayId===t.id);
-    let w=0,l=0,d=0,gf=0,ga=0;
-    games.forEach(g => { const home=g.homeId===t.id; const tf=home?g.homeScore:g.awayScore; const ta=home?g.awayScore:g.homeScore; gf+=tf; ga+=ta; if(tf>ta)w++; else if(ta>tf)l++; else d++; });
-    return {...t, w, l, d, gf, ga, pts: w*3+d};
+    let w=0,l=0,d=0,gf=0,ga=0,bsWins=0;
+    games.forEach(g => {
+      const home=g.homeId===t.id;
+      const tf=home?g.homeScore:g.awayScore;
+      const ta=home?g.awayScore:g.homeScore;
+      gf+=tf; ga+=ta;
+      if(tf>ta){ w++; if(g.isBloodsport) bsWins++; }
+      else if(ta>tf) l++;
+      else d++;
+    });
+    const normalWins = w - bsWins;
+    return {...t, w, l, d, gf, ga, pts: normalWins*3 + bsWins*9 + d};
   }).sort((a,b) => b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga));
   if (!ts.length) { tbl.innerHTML = '<div class="notice">no teams registered</div>'; }
   else {
@@ -1122,8 +1261,8 @@ function renderStandings() {
   if (!entries.length) { lb.innerHTML = '<div class="notice">no player of the match awards yet</div>'; return; }
   lb.innerHTML = entries.map((e,i) => `<div class="srow" style="grid-template-columns:22px 1fr 60px 60px">
     <div style="color:var(--fg3)">${i+1}</div>
-    <div>${e.p.name} <span style="font-size:10px;color:var(--fg3)">${e.p.pos}</span></div>
-    <div style="color:var(--warn)">${stars(calcScore(e.p))}</div>
+    <div>${e.p.name}${potmFlames(e.p.id)?' <span style="color:var(--danger)">'+potmFlames(e.p.id)+'</span>':''} <span style="font-size:10px;color:var(--fg3)">${e.p.pos}</span></div>
+    <div style="color:var(--warn)">${stars(calcScoreWithPotm(e.p))}</div>
     <div style="color:var(--good)">×${e.n}</div>
   </div>`).join('');
 }
@@ -1140,6 +1279,7 @@ function renderOwner() {
   renderOwnerTeams();
   renderInjuryManager();
   renderPlayerEditor();
+  renderEventStatus();
 }
 
 function toggleTransferWindow() {
@@ -1234,97 +1374,17 @@ function updatePlayer(id, field, value) {
   if (p) p[field] = value;
 }
 
-function saveCustomPlayer() {
-  const nameInp = document.getElementById('cpName');
-  const posInp = document.getElementById('cpPos');
-  if (!nameInp || !posInp) return;
-
-  const name = nameInp.value.trim();
-  const pos = posInp.value;
-  if (!name) { alert('Enter a player name.'); return; }
-
-  // Generate random stats
-  const p = {
-    id: 'p_' + Date.now() + '_' + Math.floor(Math.random()*1000), // Unique ID string
-    name,
-    pos,
-    str: Math.floor(Math.random() * 31) + 50, // 50-80
-    spd: Math.floor(Math.random() * 31) + 50,
-    def: Math.floor(Math.random() * 31) + 50,
-    stm: Math.floor(Math.random() * 31) + 50,
-    teamId: null // Unassigned so they appear in the draft pool
-  };
-
-  // --- CHANGED HERE: Push directly to Firebase instead of local state ---
-  if (window._fbRef) {
-    // If Firebase is live, find the next available index and save it
-    const nextIdx = state.players ? state.players.length : 0;
-    
-    // Import the global firebase database instance and update it
-    const { getDatabase, ref, set } = window.FirebaseDB; 
-    set(ref(getDatabase(), `league/players/${nextIdx}`), p)
-      .then(() => {
-        closeModal();
-        flash(`${name} summoned to the mortal realm`);
-      })
-      .catch(err => alert("Summoning failed: " + err.message));
-  } else {
-    // Fallback if you are testing offline
-    if (!state.players) state.players = [];
-    state.players.push(p);
-    closeModal();
-    render();
-  }
-}
-// ⬇️ ADD THIS LINE RIGHT HERE ⬇️
-const addPlayer = saveCustomPlayer;
-  
-function removePlayer(id) {
-  const idx = state.players.findIndex(p => p.id === id);
-  if (idx < 0) return;
-  state.players.splice(idx, 1);
-  delete state.draftedBy[id];
-  saveState(); render(); flash('player removed');
-}
-function savePlayers() {
-  const nameInp = document.getElementById('cpName');
-  const posInp = document.getElementById('cpPos');
-  if (!nameInp || !posInp) return;
-
-  const name = nameInp.value.trim();
-  const pos = posInp.value;
-  if (!name) { alert('Enter a player name.'); return; }
-
-  // 1. Generate clean, properly structured stats
-  const p = {
-    id: 'p_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-    name,
-    pos,
-    str: Math.floor(Math.random() * 31) + 50, // 50-80
-    spd: Math.floor(Math.random() * 31) + 50,
-    def: Math.floor(Math.random() * 31) + 50,
-    vis: Math.floor(Math.random() * 31) + 50,
-    stm: Math.floor(Math.random() * 31) + 50
-  };
-
-  // 2. Add it to our local tracking array safely
+function addPlayer() {
+  const id = 'p_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+  const blank = {};
+  state.stats.forEach(s => blank[s.id] = 50);
   if (!state.players) state.players = [];
-  state.players.push(p);
+  state.players.push({ id, name: 'New Player', pos: 'attacker', ...blank });
+  saveState(); render(); flash('player added — edit name and stats then save');
+}
 
-  // 3. Sync the updated state object directly up to Firebase 
-  if (window._fbRef && window._fbSet) {
-    window._fbSet(window._fbRef, state)
-      .then(() => {
-        closeModal();
-        flash(`${name} summoned to the mortal realm`);
-      })
-      .catch(err => alert("Summoning failed: " + err.message));
-  } else {
-    // Local fallback if testing completely offline
-    saveState();
-    closeModal();
-    render();
-  }
+function savePlayers() {
+  saveState(); render(); flash('players saved');
 }
 function resetLeague() {
   if (!confirm('reset all teams, drafts, and games? players and settings remain.')) return;
@@ -1343,7 +1403,7 @@ const WEATHER_TABLE = [
   { min:66, max:70, name:'eerie mist',                       icon:'🌫️',  color:'#ff4444', effect:'mist',        desc:'A pale mist rolls in from no particular direction. Watch yourself.' },
   { min:71, max:75, name:'odd figures hover over the pitch', icon:'👁️',  color:'#8844ff', effect:'figures',     desc:'They do not interfere. They observe.' },
   { min:76, max:80, name:'sudden blackout',                  icon:'⬛',  color:'#444444', effect:'blackout',    desc:'The lights go out. All players are reduced to nothing except one, who becomes everything.' },
-  { min:81, max:85, name:'the beast that has no name',       icon:'❓',  color:'#ff4444', effect:'beast',       desc:'It arrives. It watches. The players do not speak of it afterward.' },
+  { min:81, max:85, name:'the beast that has no name',       icon:'❓',  color:'#ff4444', effect:'beast',       desc:'It arrives. It watches. It has no effect on the score. The players do not speak of it afterward.' },
   { min:86, max:90, name:'quicksand',                        icon:'🏜️',  color:'#ff8844', effect:'quicksand',   desc:'The pitch thickens underfoot..' },
   { min:91, max:95, name:'zero gravity forcefield explodes', icon:'🌀',  color:'#44ff88', effect:'gravity',     desc:'For reasons that remain classified, goalies and midfielders achieve extraordinary things.' },
   { min:96, max:100,name:'no weather is present',            icon:'🤔',  color:'#888888', effect:'reroll',      desc:'Which seems odd. The league does not comment.' },
@@ -1465,7 +1525,74 @@ function generateSchedule(teams) {
 function runSim() {
   if (state.teams.length < 2) { flash('need 2+ teams'); return; }
 
-  // Regenerate schedule if teams have changed or no schedule exists
+  // ── FEAST: play one queued match per simulate click ──────────────────────
+  if ((state.activeEvent === 'feast' || state.activeEvent === 'feast_sacrifice') && state.feastQueue && state.feastQueue.length) {
+
+    // If there's a sacrifice still pending from last match, don't advance yet
+    if ((state.pendingSacrifices||[]).length > 0) {
+      flash('🔥 a sacrifice must be made before the feast continues — check the teams page');
+      return;
+    }
+
+    const next = state.feastQueue.shift(); // take one match off the queue
+    const h = state.teams.find(t=>t.id===next.hId);
+    const a = state.teams.find(t=>t.id===next.aId);
+
+    if (h && a) {
+      state.roundNum = (state.roundNum||0) + 1;
+      const weather = rollWeather();
+
+      const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id)
+        .map(([pid])=>state.players.find(p=>p.id===pid)).filter(p=>p&&!(state.injuries||{})[p.id]);
+      const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id)
+        .map(([pid])=>state.players.find(p=>p.id===pid)).filter(p=>p&&!(state.injuries||{})[p.id]);
+
+      const hR = hRaw.map(p=>applyWeather(p,weather,state.players));
+      const aR = aRaw.map(p=>applyWeather(p,weather,state.players));
+
+      const sum = (arr, pos) => arr.filter(p=>p.pos===pos).reduce((s,p)=>s+calcScore(p),0);
+      const hPow = sum(hR,'attacker')*2 + sum(hR,'midfielder') - (sum(aR,'defender')+sum(aR,'goalie')+sum(aR,'midfielder')*0.5) + Math.floor(Math.random()*80)+20;
+      const aPow = sum(aR,'attacker')*2 + sum(aR,'midfielder') - (sum(hR,'defender')+sum(hR,'goalie')+sum(hR,'midfielder')*0.5) + Math.floor(Math.random()*80)+20;
+      const hScore = Math.max(0,Math.round(hPow/120));
+      const aScore = Math.max(0,Math.round(aPow/120));
+      const loserId = hScore < aScore ? h.id : aScore < hScore ? a.id : null;
+
+      const g = {
+        home:h.name, away:a.name, homeId:h.id, awayId:a.id,
+        homeScore:hScore, awayScore:aScore,
+        round:state.roundNum, isFeast:true,
+        weather:{name:weather.name,icon:weather.icon,color:weather.color,desc:weather.desc,roll:weather.roll}
+      };
+      g.report = '🔥 FEAST OF THE BEAST — ' + generateReport(g);
+      if (g._potmId) { if(!state.potmCounts)state.potmCounts={}; state.potmCounts[g._potmId]=(state.potmCounts[g._potmId]||0)+1; g.potmId=g._potmId; delete g._potmId; }
+      state.games.push(g);
+
+      if (loserId) {
+        const loserTeam = state.teams.find(t=>t.id===loserId);
+        const hasPlayers = Object.values(state.draftedBy).some(tid=>tid===loserId);
+        if (hasPlayers) {
+          if (!state.pendingSacrifices) state.pendingSacrifices = [];
+          state.pendingSacrifices.push({teamId:loserId, teamName:loserTeam?.name||'unknown'});
+          state.activeEvent = 'feast_sacrifice';
+        }
+      }
+
+      const remaining = state.feastQueue.length;
+      const sacNeeded = (state.pendingSacrifices||[]).length > 0;
+      saveState(); renderLeague(); renderStandings(); renderTeams();
+      flash(`🔥 feast — round ${state.roundNum}: ${h.name} ${hScore}–${aScore} ${a.name}${sacNeeded?' — a sacrifice is required on the teams page':remaining?' — '+remaining+' match'+( remaining!==1?'es':'')+' remain':' — the feast is complete'}`);
+
+      // If queue is now empty and no sacrifice pending, end event
+      if (!remaining && !(state.pendingSacrifices||[]).length) {
+        state.activeEvent = null; state.feastQueue = []; state.feastResults = [];
+        saveState(); renderOwner();
+        flash('🔥 the feast of the beast is complete');
+      }
+    }
+    return; // don't run normal sim during feast
+  }
+
+  // ── NORMAL SIM ────────────────────────────────────────────────────────────
   const scheduleTeamIds = JSON.stringify((state.scheduleTeamIds||[]));
   const currentTeamIds  = JSON.stringify(state.teams.map(t=>t.id));
   if (!state.schedule || !state.schedule.length || scheduleTeamIds !== currentTeamIds) {
@@ -1521,14 +1648,32 @@ function runSim() {
     const hP = applyTactics(hR, hTac);
     const aP = applyTactics(aR, aTac);
 
-    const hAtk = hP.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
-    const hMid = hP.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-    const hDef = hP.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-    const hGk  = hP.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
-    const aAtk = aP.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
-    const aMid = aP.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
-    const aDef = aP.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
-    const aGk  = aP.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+    // Event modifiers applied after weather + tactics
+    function applyEventMods(players) {
+      return players.map(p => {
+        const q = { ...p };
+        if (state.activeEvent === 'narrowing') {
+          // All stats halved
+          ['spd','str','def','vis','stm'].forEach(f => q[f] = Math.round((q[f]||0) * 0.5));
+        } else if (state.activeEvent === 'inversion') {
+          // Attackers play as defenders and vice versa (swap pos for scoring only)
+          if (q.pos === 'attacker') q.pos = 'defender';
+          else if (q.pos === 'defender') q.pos = 'attacker';
+        }
+        return q;
+      });
+    }
+    const hFinal = applyEventMods(hP);
+    const aFinal = applyEventMods(aP);
+
+    const hAtk = hFinal.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+    const hMid = hFinal.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+    const hDef = hFinal.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+    const hGk  = hFinal.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+    const aAtk = aFinal.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+    const aMid = aFinal.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+    const aDef = aFinal.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+    const aGk  = aFinal.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
 
     const homeBoost = Math.floor(Math.random()*10) + 3; // 3–12 point home advantage
     const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20 + homeBoost;
@@ -1540,6 +1685,7 @@ function runSim() {
       awayScore: Math.max(0, Math.round(aPow/120)),
       round: state.roundNum,
       byeTeam: slot.byeId ? (state.teams.find(t=>t.id===slot.byeId)||{name:'unknown'}).name : null,
+      isBloodsport: state.activeEvent === 'bloodsport' || undefined,
       weather: {
         name: weather.name, icon: weather.icon, color: weather.color,
         desc: weather.desc, roll: weather.roll,
@@ -1561,7 +1707,15 @@ function runSim() {
 
   saveState(); renderLeague(); renderStandings();
   const byeTeamName = slot.byeId ? (state.teams.find(t=>t.id===slot.byeId)||{name:'?'}).name : null;
-  flash(`round ${state.roundNum} — weather: ${weather.name}${byeTeamName?' — bye: '+byeTeamName:''}`);
+
+  // Auto-end single-round events
+  let eventNote = '';
+  if (state.activeEvent === 'narrowing' || state.activeEvent === 'inversion' || state.activeEvent === 'reckoning') {
+    eventNote = ` — ${state.activeEvent} has ended`;
+    state.activeEvent = null;
+    saveState(); renderOwner();
+  }
+  flash(`round ${state.roundNum} — weather: ${weather.name}${byeTeamName?' — bye: '+byeTeamName:''}${eventNote}`);
 }
 
 function showCreateTeam() { showTeamModal(null); }
@@ -1674,7 +1828,7 @@ function checkOwnerPw() {
     inp.focus();
   }
 }
-  
+
 let ft;
 function flash(msg) {
   const t = document.getElementById('ticker');
@@ -1682,6 +1836,174 @@ function flash(msg) {
   t.style.color = 'var(--good)';
   clearTimeout(ft);
   ft = setTimeout(() => { updateTicker(); t.style.color = ''; }, 2400);
+}
+
+// ── SPECIAL EVENTS ────────────────────────────────────────────────────────
+
+function renderEventStatus() {
+  const el  = document.getElementById('eventStatus');  if (!el)  return;
+  const btn = document.getElementById('stopEventBtn'); if (!btn) return;
+  const picker = document.getElementById('eventPicker'); if (!picker) return;
+
+  const ev = state.activeEvent;
+  const labels = {
+    bloodsport: '🩸 blood sport day is active — wins scored during this event count triple',
+    feast: '🔥 feast of the beast — ' + (state.pendingSacrifices||[]).length + ' team(s) must sacrifice on the teams page',
+    feast_sacrifice: '🔥 feast of the beast — ' + (state.pendingSacrifices||[]).length + ' team(s) must sacrifice on the teams page',
+    narrowing: '🌀 the narrowing is set — will apply on next simulated round then end automatically',
+    inversion: '👁 the inversion is set — will apply on next simulated round then end automatically',
+    reckoning: '⚡ the reckoning is set — all teams play all teams on next simulated round',
+  };
+
+  if (ev) {
+    el.innerHTML = `<div style="color:var(--danger);font-size:12px;font-weight:700">${labels[ev]||'event active: '+ev}</div>`;
+    btn.style.display = 'inline-block';
+    picker.style.opacity = '0.35';
+    picker.style.pointerEvents = 'none';
+  } else {
+    el.innerHTML = `<div style="font-size:11px;color:var(--fg3)">no event active — league running normally</div>`;
+    btn.style.display = 'none';
+    picker.style.opacity = '1';
+    picker.style.pointerEvents = '';
+  }
+}
+
+function startEvent(type) {
+  if (state.activeEvent) { flash('stop the current event first'); return; }
+  if (type === 'feast') {
+    runFeastOfTheBeast();
+  } else if (type === 'reckoning') {
+    runReckoning();
+  } else {
+    // bloodsport, narrowing, inversion — just set the flag
+    state.activeEvent = type;
+    saveState(); render();
+    flash({bloodsport:'🩸 blood sport day begins', narrowing:'🌀 the narrowing is set', inversion:'👁 the inversion is set'}[type]||type);
+  }
+}
+
+function stopEvent() {
+  state.activeEvent = null;
+  state.feastResults = [];
+  state.feastQueue = [];
+  state.pendingSacrifices = [];
+  saveState(); render();
+  flash('event ended — league returns to normal');
+}
+
+// ── FEAST OF THE BEAST ────────────────────────────────────────────────────
+function runFeastOfTheBeast() {
+  if (state.teams.length < 2) { flash('need 2+ teams for the feast'); return; }
+
+  // Build rival pairs
+  const pairCounts = {};
+  (state.games||[]).forEach(g => {
+    if (!g.homeId||!g.awayId) return;
+    const key = [g.homeId,g.awayId].sort().join('|');
+    pairCounts[key] = (pairCounts[key]||0) + 1;
+  });
+  let pairs = [];
+  if (Object.keys(pairCounts).length) {
+    const maxC = Math.max(...Object.values(pairCounts));
+    pairs = Object.entries(pairCounts).filter(([,v])=>v===maxC).map(([k])=>k.split('|'));
+  }
+  if (!pairs.length) {
+    const ts = state.teams;
+    for (let i=0;i<ts.length-1;i+=2) pairs.push([ts[i].id,ts[i+1].id]);
+  }
+  if (!pairs.length) { flash('could not determine rival pairs'); return; }
+
+  // Store pairs to be played one-at-a-time when owner hits simulate round
+  state.activeEvent = 'feast';
+  state.feastQueue = pairs.map(([hId,aId]) => ({hId,aId})); // matches still to play
+  state.feastResults = [];
+  state.pendingSacrifices = [];
+  saveState(); render();
+  flash(`🔥 the feast is set — ${pairs.length} rival match${pairs.length!==1?'es':''} will play one per round. hit simulate round to begin.`);
+}
+
+function sacrificePlayer(pid, teamId) {
+  const p = state.players.find(pl=>pl.id===pid);
+  const team = state.teams.find(t=>t.id===teamId);
+  if (!p||!team) return;
+  const val = playerValue(p);
+  const pName = p.name, tName = team.name;
+
+  const pIdx = state.players.findIndex(pl=>pl.id===pid);
+  if (pIdx>=0) state.players.splice(pIdx,1);
+  delete state.draftedBy[pid];
+  if (state.injuries) delete state.injuries[pid];
+  if (state.potmCounts) delete state.potmCounts[pid];
+
+  state.pendingSacrifices = (state.pendingSacrifices||[]).filter(s=>s.teamId!==teamId);
+  if (!state.sacrifices) state.sacrifices = [];
+  state.sacrifices.push({playerName:pName, teamName:tName, value:val, round:state.roundNum||0});
+
+  if (!state.pendingSacrifices.length) {
+    if (!(state.feastQueue||[]).length) {
+      // All matches played and all sacrifices made — end event
+      state.activeEvent = null;
+      state.feastResults = [];
+      state.feastQueue = [];
+    } else {
+      // More feast matches still queued — go back to feast state
+      state.activeEvent = 'feast';
+    }
+  }
+  saveState(); render();
+  flash(`🔥 ${pName} has been sacrificed. ${tName} recovers ${fmtVal(val)}.`);
+}
+
+// ── THE RECKONING ─────────────────────────────────────────────────────────
+function runReckoning() {
+  if (state.teams.length < 2) { flash('need 2+ teams'); return; }
+  state.activeEvent = 'reckoning';
+  state.roundNum = (state.roundNum||0) + 1;
+
+  const weather = rollWeather();
+  if (weather.effect==='blackout') {
+    const all = Object.keys(state.draftedBy);
+    if (all.length) weather._heroId = all[Math.floor(Math.random()*all.length)];
+  }
+
+  const teams = [...state.teams];
+  for (let i=0;i<teams.length-1;i++) {
+    for (let j=i+1;j<teams.length;j++) {
+      const h=teams[i], a=teams[j];
+      const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id)
+        .map(([pid])=>state.players.find(p=>p.id===pid)).filter(p=>p&&!(state.injuries||{})[p.id]);
+      const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id)
+        .map(([pid])=>state.players.find(p=>p.id===pid)).filter(p=>p&&!(state.injuries||{})[p.id]);
+      const hR = hRaw.map(p=>applyWeather(p,weather,state.players));
+      const aR = aRaw.map(p=>applyWeather(p,weather,state.players));
+
+      const hAtk=hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+      const hMid=hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+      const hDef=hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+      const hGk =hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+      const aAtk=aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+      const aMid=aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+      const aDef=aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+      const aGk =aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+      const hPow=hAtk*2+hMid-(aDef+aGk+aMid*0.5)+Math.floor(Math.random()*80)+20;
+      const aPow=aAtk*2+aMid-(hDef+hGk+hMid*0.5)+Math.floor(Math.random()*80)+20;
+
+      const g = {
+        home:h.name,away:a.name,homeId:h.id,awayId:a.id,
+        homeScore:Math.max(0,Math.round(hPow/120)),
+        awayScore:Math.max(0,Math.round(aPow/120)),
+        round:state.roundNum, isReckoning:true,
+        weather:{name:weather.name,icon:weather.icon,color:weather.color,desc:weather.desc,roll:weather.roll}
+      };
+      g.report = '⚡ THE RECKONING — ' + generateReport(g);
+      if (g._potmId) { if(!state.potmCounts)state.potmCounts={}; state.potmCounts[g._potmId]=(state.potmCounts[g._potmId]||0)+1; g.potmId=g._potmId; delete g._potmId; }
+      state.games.push(g);
+    }
+  }
+
+  state.activeEvent = null;
+  saveState(); renderLeague(); renderStandings(); renderOwner();
+  flash(`⚡ the reckoning — round ${state.roundNum} — all ${state.teams.length*(state.teams.length-1)/2} matchups played — weather: ${weather.name}`);
 }
 
 loadState();
