@@ -1086,13 +1086,10 @@ function renderLeague() {
     if (teams.length < 2) {
       sg.innerHTML = '<div class="notice">need 2+ teams for a schedule</div>';
     } else {
-      // Build or reuse schedule
-      const scheduleTeamIds = JSON.stringify((state.scheduleTeamIds||[]));
-      const currentTeamIds  = JSON.stringify(teams.map(t=>t.id));
-      let sched = state.schedule;
-      if (!sched || !sched.length || scheduleTeamIds !== currentTeamIds) {
-        sched = generateSchedule(teams);
-      }
+      // Always regenerate schedule from current teams — never use stored version
+      // (Firebase corrupts nested arrays on round-trip)
+      const sched = generateSchedule(teams);
+      if (!sched.length) { sg.innerHTML = '<div class="notice">could not generate schedule</div>'; return; }
       // Rivalry data for schedule labels
       const pairCounts = {};
       (state.games||[]).forEach(g => {
@@ -1607,20 +1604,24 @@ function runSim() {
   }
 
   // ── NORMAL SIM ────────────────────────────────────────────────────────────
+  // Always regenerate schedule locally — Firebase corrupts nested arrays on round-trip
   const scheduleTeamIds = JSON.stringify((state.scheduleTeamIds||[]));
   const currentTeamIds  = JSON.stringify(state.teams.map(t=>t.id));
-  if (!state.schedule || !state.schedule.length || scheduleTeamIds !== currentTeamIds) {
-    state.schedule = generateSchedule(state.teams);
+  if (scheduleTeamIds !== currentTeamIds) {
+    // Teams changed — reset round counter
     state.scheduleTeamIds = state.teams.map(t=>t.id);
-    state.scheduleRound = 0; // index into schedule array
+    state.scheduleRound = 0;
   }
+  const schedule = generateSchedule(state.teams);
+  if (!schedule.length) { flash('need 2+ teams'); return; }
 
   state.roundNum = (state.roundNum||0) + 1;
 
   // Pick which schedule slot to play (cycle back to start after full rotation)
-  const schedIdx = (state.scheduleRound || 0) % state.schedule.length;
-  const slot = state.schedule[schedIdx];
+  const schedIdx = (state.scheduleRound || 0) % schedule.length;
+  const slot = schedule[schedIdx];
   state.scheduleRound = schedIdx + 1;
+  // Do NOT store schedule in state — it gets corrupted by Firebase
 
   // Roll weather once for the round
   const weather = rollWeather();
