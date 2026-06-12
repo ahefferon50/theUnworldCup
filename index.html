@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,14 +31,19 @@ const app = initializeApp(firebaseConfig);
   window._fbSet = set;
 
   window._fbWriting = false;
+  window._localGameIds = new Set(); // track game ids we've saved locally
 
   // Listen for remote changes and update UI
   onValue(leagueRef, (snapshot) => {
     if (window._fbWriting) return; // ignore echo of our own write
     const data = snapshot.val();
     if (data) {
-      // Preserve local session state, merge in remote league data
-      const myTeamId = sessionStorage.getItem('uwc_myteam');
+      // Merge remote games with any local games not yet confirmed in Firebase
+      const remoteGameIds = new Set((data.games||[]).map(g=>g && (g.id||g.round+g.home+g.away)));
+      const localOnly = (state.games||[]).filter(g => {
+        const gid = g && (g.id||g.round+g.home+g.away);
+        return gid && !remoteGameIds.has(gid);
+      });
       state = data;
       if (!state.draftedBy) state.draftedBy = {};
       if (!state.games) state.games = [];
@@ -47,6 +51,8 @@ const app = initializeApp(firebaseConfig);
       if (!state.stats) state.stats = window._defaultStats();
       if (!state.roundNum) state.roundNum = 0;
       if (!state.tactics) state.tactics = {};
+      // Re-add any local games that haven't landed in Firebase yet
+      if (localOnly.length) state.games = [...state.games, ...localOnly];
       render();
     }
   });
@@ -325,12 +331,11 @@ const ROSTER_SLOTS = {attacker:2, midfielder:2, defender:2, goalie:1};
 const WASTELAND = ["April is the cruellest month, breeding lilacs out of the dead land.","I will show you fear in a handful of dust.","The river's tent is broken; the last fingers of leaf clutch and sink into the wet bank.","How do you like your blue eyes boy mister death?","All is this wrong key, the lark sings","","What are the roots that clutch, what branches grow out of this stony rubbish?","Here is no water but only rock, rock and no water and the sandy road.","I think we are in rats' alley where the dead men lost their bones.","The awful daring of a moment's surrender.","These fragments I have shored against my ruins.","Who is the third who walks always beside you?","Unreal city, under the brown fog of a winter dawn.","The wind crosses the brown land, unheard.","At the violet hour, when the eyes and back turn upward from the desk.","The nymphs are departed.","Son of man, you cannot say, or guess, for you know only a heap of broken images.","I had not thought death had undone so many.","There I saw one I knew, and stopped him, crying: you who were with me in the ships at Mylae.","What have we given? My friend, blood shaking my heart.","Sweet Thames, run softly, till I end my song.","By the waters of Leman I sat down and wept.","O the moon shone bright on Mrs. Porter and on her daughter."];
 
 const OMINOUS = ["A gaze blank and pitiless as the sun Lay vanquisht, rowling in the fiery Gulfe","One next himself in power, and next in crime,","There do the hideous Harpies make their nests,","The day is not risen for the sun shall not rise","the sun will be darkened at its rising and the moon will not rise at its light","depart from me","you shall seek death but ye shall not find it","The scoreboard does not lie, though the scoreboard itself has lied before.","Witnesses report the grass did not grow back for three days.","Officials declined to comment on what the linesperson saw.","The stadium clocks ran backwards for approximately eleven minutes.","All post-match interviews were conducted in a room that had no door.","The referee has not been seen since.","The ball, when recovered, was warm.","Meteorologists are not returning calls.","Something was decided here today. What, exactly, remains contested.","Players from both sides later agreed: the shadows had been wrong.","Three spectators in row G reported briefly forgetting their own names. Proably for the best","The away team bus arrived. The away team was not on it.","One corner flag remained upright. No one touched it.","The goal was given. The goal was also not given. Both are true.","The monster that ate several players was adjucited to have not impacted the final result by a team of experts","Investigators later confirmed the pitch was exactly one metre longer than it had been before kickoff."];
-
 const VERBS_ATK = ['struck','chucked it in','dispatched','detonated','manifested','willed into existence','deposited','conjured','hit cleanly','forced through the membrane of possibility','launched into the void','inscribed upon the net','Scithed into the top corner','Teleported','Lifted with pace and power','Absolutely twatted in'];
 const VERBS_GK  = ['refused entry to','dissolved','returned to the nothing from which it came','unmade','held at the threshold','consumed','quietly reclassified as not having occurred','removed the potential of','denied passage to','pushed past the far post into the gaping maw of the awaiting beast','held strong at the post','ate'];
 const verbs_Def = ['fucking nutted','tackled','beat for pace','deleted from the world','blocked','refused to block','defended','stopped','angered','whoopsie dasied','opposed','secured','capsized','performed acts that shall not be recorded here', 'bled out'];
 const VERBS_MID = ['controlled the space around','imposed order upon','redistributed the chaos near','threaded through','quietly dominated','refused to yield ground to','made themselves very large near','narrated proceedings from the centre against','bested','betrayed a certain animalistic fury'];
-
+  
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function roll(p){ return Math.random() < p; }
 function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr; }
@@ -410,7 +415,6 @@ function generateReport(game) {
 
   const atmPool = [
     `The match was played at ${ground}. This was later noted as unusual.`,
-    `${hManager} mentioned after the game that We didn’t have these problems during the first Children’s Crusade, Which I WAS NOT ALIVE FOR. He answered no further questions`,
     `The match was played thirty minutes early at ${ground}. This was described by all involved as most excellent.`,
     `A penalty was not awarded. Whether one should have been remains, officially, an open question.`,
     `The referee added four minutes of stoppage time and then, without explanation, subtracted two. He then laughed and laughed and laughed`,
@@ -608,9 +612,10 @@ function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
   // Save to Firebase if available
   if (window._fbRef && window._fbSet) {
-    window._fbWriting = true; // block incoming sync while we write
-    window._fbSet(window._fbRef, state)
-      .then(() => { setTimeout(() => { window._fbWriting = false; }, 1500); })
+    window._fbWriting = true;
+    const snapshot = JSON.parse(JSON.stringify(state)); // capture state at this moment
+    window._fbSet(window._fbRef, snapshot)
+      .then(() => { setTimeout(() => { window._fbWriting = false; }, 5000); })
       .catch(() => { window._fbWriting = false; });
   }
 }
