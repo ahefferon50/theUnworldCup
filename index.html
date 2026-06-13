@@ -1048,12 +1048,12 @@ function toggleRound(r) {
 function applyEventStyling() {
   const ev = state.activeEvent;
   const configs = {
-    bloodsport:     { bg:'#1a0000', text:'#cc3333', hdr:'#ff4444', fix:'#3a0000', bBg:'#3a0000', bColor:'var(--danger)', bBorder:'var(--danger)', msg:'🩸 blood sport day — wins scored this round count triple' },
-    feast:          { bg:'#1a0800', text:'#cc6633', hdr:'#ff8844', fix:'#3a1a00', bBg:'#3a1000', bColor:'#ff8844',      bBorder:'#ff8844',       msg:'🔥 feast of the beast — rival matches in progress' },
-    feast_sacrifice:{ bg:'#1a0800', text:'#cc6633', hdr:'#ff8844', fix:'#3a1a00', bBg:'#3a1000', bColor:'#ff8844',      bBorder:'#ff8844',       msg:'🔥 feast of the beast — go to the teams tab to make your sacrifice' },
-    narrowing:      { bg:'#1a001a', text:'#aa44cc', hdr:'#cc88ff', fix:'#2a002a', bBg:'#2a0033', bColor:'#cc88ff',      bBorder:'#cc88ff',       msg:'🌀 the narrowing — all player stats halved this round' },
-    inversion:      { bg:'#1a1a00', text:'#ccaa00', hdr:'#ffcc44', fix:'#2a2a00', bBg:'#2a2400', bColor:'#ffcc44',      bBorder:'#ffcc44',       msg:'👁 the inversion — attackers and defenders have swapped roles this round' },
-    reckoning:      { bg:'#001a1a', text:'#009999', hdr:'#44ffdd', fix:'#002a2a', bBg:'#002a2a', bColor:'#44ffdd',      bBorder:'#44ffdd',       msg:'⚡ the reckoning — all teams play all teams this round' },
+    bloodsport:     { bg:'#1a0000', text:'#cc3333', hdr:'#ff4444', fix:'#3a0000', bBg:'#3a0000', bColor:'var(--danger)', bBorder:'var(--danger)', msg:'🩸 blood sport day — prove yourself today' },
+    feast:          { bg:'#1a0800', text:'#cc6633', hdr:'#ff8844', fix:'#3a1a00', bBg:'#3a1000', bColor:'#ff8844',      bBorder:'#ff8844',       msg:'🔥👁️  feast of the beast — It Hungers, It must be Satisfied'👁️🔥 },
+    feast_sacrifice:{ bg:'#1a0800', text:'#cc6633', hdr:'#ff8844', fix:'#3a1a00', bBg:'#3a1000', bColor:'#ff8844',      bBorder:'#ff8844',       msg:'🔥 feast of the beast — Those who have failed, must make their sacrafice' },
+    narrowing:      { bg:'#1a001a', text:'#aa44cc', hdr:'#cc88ff', fix:'#2a002a', bBg:'#2a0033', bColor:'#cc88ff',      bBorder:'#cc88ff',       msg:'🌀 the narrowing —  The world is turned around, player stats are halved ' },
+    inversion:      { bg:'#1a1a00', text:'#ccaa00', hdr:'#ffcc44', fix:'#2a2a00', bBg:'#2a2400', bColor:'#ffcc44',      bBorder:'#ffcc44',       msg:'👁 the inversion — Get up the pitch and make something of your self, defenders and attackers are swapper' },
+    reckoning:      { bg:'#001a1a', text:'#009999', hdr:'#44ffdd', fix:'#002a2a', bBg:'#002a2a', bColor:'#44ffdd',      bBorder:'#44ffdd',       msg:'⚡ the reckoning — So it has come to this, all teamst play all teams' },
   };
   const cfg = ev ? configs[ev] : null;
   ['tab-league','tab-teams','tab-standings'].forEach(tabId => {
