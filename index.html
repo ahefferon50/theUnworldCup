@@ -1911,31 +1911,65 @@ function stopEvent() {
 function runFeastOfTheBeast() {
   if (state.teams.length < 2) { flash('need 2+ teams for the feast'); return; }
 
-  // Build rival pairs
-  const pairCounts = {};
-  (state.games||[]).forEach(g => {
-    if (!g.homeId||!g.awayId) return;
-    const key = [g.homeId,g.awayId].sort().join('|');
-    pairCounts[key] = (pairCounts[key]||0) + 1;
-  });
-  let pairs = [];
-  if (Object.keys(pairCounts).length) {
-    const maxC = Math.max(...Object.values(pairCounts));
-    pairs = Object.entries(pairCounts).filter(([,v])=>v===maxC).map(([k])=>k.split('|'));
-  }
-  if (!pairs.length) {
-    const ts = state.teams;
-    for (let i=0;i<ts.length-1;i+=2) pairs.push([ts[i].id,ts[i+1].id]);
-  }
-  if (!pairs.length) { flash('could not determine rival pairs'); return; }
+  // 1. Get the master schedule sequence
+  const fixtures = generateRoundRobinSchedule(state.teams);
+  const totalUniqueRounds = fixtures.length;
 
-  // Store pairs to be played one-at-a-time when owner hits simulate round
+  // 2. Find out which round is next up on the schedule calendar
+  const totalRoundsPlayed = state.roundNum || 0;
+  const nextRoundIndex = totalRoundsPlayed % totalUniqueRounds;
+  const nextScheduledMatches = fixtures[nextRoundIndex];
+
+  // 3. Queue up these exact scheduled matches for the feast event
   state.activeEvent = 'feast';
-  state.feastQueue = pairs.map(([hId,aId]) => ({hId,aId})); // matches still to play
+  state.feastQueue = nextScheduledMatches.map(match => ({
+    hId: match.home.id,
+    aId: match.away.id
+  }));
+  
   state.feastResults = [];
   state.pendingSacrifices = [];
-  saveState(); render();
-  flash(`🔥 the feast is set — ${pairs.length} rival match${pairs.length!==1?'es':''} will play one per round. hit simulate round to begin.`);
+  
+  saveState(); 
+  render();
+  
+  flash(`🔥 the feast is set — ${nextScheduledMatches.length} scheduled match${nextScheduledMatches.length!==1?'es':''} will play one per round with sacrifice rules. hit simulate round to begin.`);
+}
+
+// Helper algorithm used by the feast to grab the current round-robin layout
+function generateRoundRobinSchedule(teamsList) {
+  const list = [...teamsList];
+  
+  // If there's an odd number of teams, add a dummy "Bye" team to keep pairings even
+  if (list.length % 2 !== 0) {
+    list.push({ id: 'BYE', name: 'Ghost Team (BYE)' });
+  }
+
+  const numTeams = list.length;
+  const numRounds = numTeams - 1;
+  const matchesPerRound = numTeams / 2;
+  const schedule = [];
+
+  for (let round = 0; round < numRounds; round++) {
+    const roundMatches = [];
+    for (let i = 0; i < matchesPerRound; i++) {
+      const homeIdx = (round + i) % (numTeams - 1);
+      let awayIdx = (round + numTeams - 1 - i) % (numTeams - 1);
+
+      if (i === 0) {
+        awayIdx = numTeams - 1;
+      }
+
+      const homeTeam = list[homeIdx];
+      const awayTeam = list[awayIdx];
+
+      if (homeTeam.id !== 'BYE' && awayTeam.id !== 'BYE') {
+        roundMatches.push({ home: homeTeam, away: awayTeam });
+      }
+    }
+    schedule.push(roundMatches);
+  }
+  return schedule;
 }
 
 function sacrificePlayer(pid, teamId) {
