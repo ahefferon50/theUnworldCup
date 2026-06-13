@@ -369,13 +369,9 @@ function generateReport(game) {
   if (hAtk.length)
     atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} the only goal of the half, which officials later described as "probable".`);
   if (hAtk.length)
-    atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} a beaufiful goal in the ${min()}th minute".`);
-  if (hAtk.length)
     atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} a clean attempt in the ${min()}th minute".`);
   if (hAtk.length)
     atkPool.push(`${rnd(hAtk).name} ${rnd(VERBS_ATK)} twice. Both are listed in the match report under different categories.`);
-  if (aAtk.length && hGk.length)
-    atkPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} from range in the ${min()}th; ${rnd(hGk).name} ${rnd(VERBS_GK)} the follow-up.`);
   if (aAtk.length)
     atkPool.push(`${rnd(aAtk).name} ${rnd(VERBS_ATK)} an attempt that was ruled ${roll(0.5)?'valid':'inconclusive'}.`);
   if (aAtk.length && hGk.length)
