@@ -399,6 +399,10 @@ function generateReport(game) {
     defPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} ${rnd(aAtk).name} in the ${min()}th. The attempt was not spoken of again.`);
   if (hDef.length)
     defPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} the approach entirely. The approach has not commented.`);
+  if (hDef.length)
+    defPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} a promising attack. What it promised we cannot say`);
+  if (hDef.length)
+    defPool.push(`${rnd(hDef).name} ${rnd(verbs_Def)} an attacker with a risky tackle.`);
   if (hDef.length && aAtk.length)
     defPool.push(`${rnd(aAtk).name} was ${rnd(verbs_Def)} by ${rnd(hDef).name} before reaching the area. What happened in that corridor of grass has not been fully established.`);
   if (aDef.length && hDef.length)
