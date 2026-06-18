@@ -1575,8 +1575,8 @@ function runSim() {
       const aR = aRaw.map(p=>applyWeather(p,weather,state.players));
 
       const sum = (arr, pos) => arr.filter(p=>p.pos===pos).reduce((s,p)=>s+calcScore(p),0);
-      const hPow = sum(hR,'attacker')*2 + sum(hR,'midfielder') - (sum(aR,'defender')+sum(aR,'goalie')+sum(aR,'midfielder')*0.5) + Math.floor(Math.random()*80)+20;
-      const aPow = sum(aR,'attacker')*2 + sum(aR,'midfielder') - (sum(hR,'defender')+sum(hR,'goalie')+sum(hR,'midfielder')*0.5) + Math.floor(Math.random()*80)+20;
+      const hPow = sum(hR,'attacker')*2 + sum(hR,'midfielder') - (sum(aR,'defender')+sum(aR,'goalie')+sum(aR,'midfielder')*0.5) + Math.floor(Math.random()*130)+20;
+      const aPow = sum(aR,'attacker')*2 + sum(aR,'midfielder') - (sum(hR,'defender')+sum(hR,'goalie')+sum(hR,'midfielder')*0.5) + Math.floor(Math.random()*130)+20;
       const hScore = Math.max(0,Math.round(hPow/120));
       const aScore = Math.max(0,Math.round(aPow/120));
       const loserId = hScore < aScore ? h.id : aScore < hScore ? a.id : null;
