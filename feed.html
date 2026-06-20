@@ -214,53 +214,57 @@
       name: "Unworld Cup Bureau",
       handle: "@the_index",
       avatar: "👁️",
+      // Dry, official, deeply unsettling. Announces things like they're policy documents.
       voice: 'official'
     },
     groundskeeper: {
       name: "Local Groundskeeper (Missing)",
       handle: "@pitchwatcher",
       avatar: "💀",
+      // First-person, confused, trauma responses. Was there. Not sure what they saw.
       voice: 'witness'
     },
     lad: {
       name: "An Absolute Lad",
       handle: "@bum_time_enjoyer",
       avatar: "🍺",
+      // Genuine football fan who is slowly realizing this league is wrong. Uses normal football slang.
       voice: 'fan'
     },
     ultras: {
       name: "Ultra Sec 4",
       handle: "@red_void_ultras",
       avatar: "🚩",
+      // Aggressively partisan. Deeply committed to a team that hasn't won in years.
       voice: 'ultra'
     },
-    littleboy: {
-  name: "Lostlilboi",
-  handle: "@littleboilost",
-  avatar: "🧒",
-  voice: 'boy'
-},
     prophet: {
       name: "Terrace Prophet",
       handle: "@the_unseen",
       avatar: "🫀",
+      // Cryptic pronouncements. Short. Never explains. Everything is a portent.
       voice: 'prophet'
     },
     drone: {
       name: "Archive Drone 09",
       handle: "@void_sports",
       avatar: "🛸",
+      // Robotic stats-and-data account that has developed opinions it cannot process.
       voice: 'drone'
     },
     ministry: {
       name: "Ministry of Offside Math",
       handle: "@realsignals",
       avatar: "🔮",
+      // Football analytics person who has gone completely off the deep end.
       voice: 'analyst'
     }
   };
 
   // ─── POST GENERATORS BY VOICE ──────────────────────────────────────────────
+  // Each function returns an array of possible posts for that account archetype.
+  // Posts reference real data: team names, player names, managers, scores, weather.
+
   const GENERATORS = {
 
     official: (g, state) => {
@@ -269,9 +273,9 @@
       const potm = g.potm;
       return rnd([
         `RESULT REGISTERED. ${g.home} ${g.homeScore}–${g.awayScore} ${g.away}. The appropriate authorities have been notified. Affected spectators should report to sector nine.`,
-        `Match classification: ${g.homeScore === g.awayScore ? 'NULL EVENT' : 'DECISIVE'}. ${winner ? winner + ' claims the points.' : 'No winner. The points have been absorbed.'} Citizens are reminded to remain in their designated zones.`,
-        `Post-match update: ${potm ? potm + ' has been named Player of the Match. Their details have been added to the register.' : 'Player of the Match designation: WITHHELD.'} Weather conditions during the fixture have been noted for archival purposes.`,
-        `Round ${g.round} fixture processed. ${loser ? loser + ' are reminded that failure to accrue points is not, in itself, a violation. It merely places you closer to the threshold.' : g.home + ' processed the outcome as mandated. Compliance assumed.'}`,
+        `Match classification: ${g.homeScore === g.awayScore ? 'NULL EVENT' : 'DECISIVE'}. ${winner ? winner + ' claims the points.' : 'No winner. The points have been absorbed.'} Citizens are reminded that the league table is not a suggestion.`,
+        `Post-match update: ${potm ? potm + ' has been named Player of the Match. Their details have been added to the register.' : 'Player of the Match designation: WITHHELD.'} Weather conditions during play: ${g.weather?.name || 'UNCLASSIFIED'}. The Bureau thanks you for your compliance.`,
+        `Round ${g.round} fixture processed. ${loser ? loser + ' are reminded that failure to accrue points is not, in itself, a violation. It merely places you closer to the threshold.' : g.home + ' and ' + g.away + ' have been issued matching certificates. Please do not compare them.'}`,
         `NOTICE: The result of ${g.home} vs ${g.away} has been entered into the permanent record. Any attempts to dispute the scoreline will be handled by the Dispute Bureau, which does not exist.`
       ]);
     },
@@ -282,9 +286,9 @@
       const manager_away = getManager(state, g.away);
       return rnd([
         `I was at the ${g.home} ground today. When the final whistle blew I couldn't remember which team I'd come to support. I'm still not sure. My seat was wet when I sat down but it hadn't rained.`,
-        `${potm ? potm + ' was out there doing something I cannot describe using standard football vocabulary.' : 'I watched the whole match and I genuinely cannot tell you what I saw.'} The grass was too green. It smelled like rust.`,
-        `The ${g.weather?.name || 'weather'} today at the ${g.home} match. The ${g.weather?.name || 'weather'} during a game like this. I need everyone to understand that I don't go to matches anymore. This was supposed to be the last one.`,
-        `${manager_home ? manager_home + ' was pacing the technical area and I could have sworn his shadow wasn\'t keeping up.' : 'The manager was very still in the technical area. Very, very still. When he finally blinked everyone gasped.'}`,
+        `${potm ? potm + ' was out there doing something I cannot describe using standard football vocabulary.' : 'I watched the whole match and I genuinely cannot tell you what I saw.'} The grass smelled like copper and the hotdog stand was locked from the inside. Atmosphere: 10/10.`,
+        `The ${g.weather?.name || 'weather'} today at the ${g.home} match. The ${g.weather?.name || 'weather'} during a game like this. I need everyone to understand that I don't go to matches anymore after what happened in Round ${Math.max(1, g.round - 2)}, and yet. Here I am. Here I always am.`,
+        `${manager_home ? (manager_home + " was pacing the technical area and I could have sworn his shadow was not keeping up.") : "The manager was very still in the technical area. Very, very still."} Final score was ${g.homeScore}–${g.awayScore}. I wrote it on my hand so I would not forget. My hand has since been washed.`,
         `I don't remember the journey home from the ${g.home} vs ${g.away} match. I woke up in my kitchen. The kettle was already on. Something had been kind enough to make me tea.`
       ]);
     },
@@ -292,14 +296,15 @@
     fan: (g, state) => {
       const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
       const loser = winner === g.home ? g.away : winner === g.away ? g.home : null;
+      const margin = Math.abs(g.homeScore - g.awayScore);
       const potm = g.potm;
       const myTeam = getFanTeam(state);
       return rnd([
         `mate I'm just trying to watch football and ${g.home} have got three players called ${potm || 'someone'} on their pitch I swear on my life something is wrong with the squad list`,
-        `${g.homeScore === g.awayScore ? 'draws are draws lads' : winner + ' deserved that honestly, ' + loser + ' were absolutely shocking second half'}, the ref was having a nightmare in the first half but honestly who wasn't`,
-        `ngl the ${g.weather?.name || 'conditions'} today completely changed the game. ${g.home} can't play in these conditions. I said this before kickoff. My mates said I was wrong. I was not wrong.`,
-        `every time I look at the league table it looks different to how it looked twenty seconds ago. sent a screenshot to my brother and he said the numbers were different in his version. anyway ${myTeam || 'the lads'} played alright`,
-        `${potm ? potm + ' had a worldie today, genuinely' : 'no standout performer today, they were all a bit whatever'}, can't believe ${loser || g.away} thought this was the game to try pressing high the whole way`
+        `${g.homeScore === g.awayScore ? 'draws are draws lads' : winner + ' deserved that honestly, ' + loser + ' were absolutely shocking second half'}, the ref was having a nightmare in the first half but look ${margin > 2 ? "that scoreline doesn't lie" : "it could've gone either way"} and I said what I said`,
+        `ngl the ${g.weather?.name || 'conditions'} today completely changed the game. ${g.home} can't play in these conditions. I said this before kickoff. My mates said I was wrong. I was not wrong. I am never wrong about ${g.home}.`,
+        `every time I look at the league table it looks different to how it looked twenty seconds ago. sent a screenshot to my brother and he said the numbers were different in his version. anyway ${myTeam || g.home} top of the table by the end of the season or I'll eat my shirt`,
+        `${potm ? potm + ' had a worldie today, genuinely' : 'no standout performer today, they were all a bit whatever'}, can't believe ${loser || g.away} thought this was the game to try pressing high. mate. against THESE lads. in THIS weather. boldness of it.`
       ]);
     },
 
@@ -316,23 +321,12 @@
           : drew
           ? `A point. A point. They will give us a point. Do you think a point is what we came here for. Do you think the lads in Block D queued for five hours to accept a POINT.`
           : `I have been supporting ${myTeam || g.home} for twenty-three years and I have never once felt good about it and I never will and I will never stop. ${enemy} can rot.`,
-        `Ultra Sec 4 will be at every away fixture this season regardless of the dimensional irregularities that made last month's trip impossible to explain. We travel. We always travel. The transport simply reorganizes itself around us.`,
+        `Ultra Sec 4 will be at every away fixture this season regardless of the dimensional irregularities that made last month's trip impossible to explain. We travel. We always travel. The transport is not always the issue.`,
         `${enemy} fans have been talking all week. ALL WEEK. You've seen the forum. And now look at the table. Look at the table. Some of us have been saying this for years. THE TABLE KNOWS.`,
-        `CAPO NOTICE: The singing in the North End during the second half was noted by the Bureau of Sound Events and formally described as "acoustically anomalous." We take this as a compliment. Ultra Sec 4 will sing louder.`
+        `CAPO NOTICE: The singing in the North End during the second half was noted by the Bureau of Sound Events and formally described as "acoustically anomalous." We take this as a compliment. Ultras never stop. Not even when asked to.`
       ]);
     },
 
-  boy: (g, state) => {
-  const winner = g.homeScore > g.awayScore ? g.home : g.away;
-  return rnd([
-      `are you my mommy?.`,
-      `I love the colors on the shirts!`,
-      `I'm lost`,
-      `hello? are you there?`,
-      ]);
-    },
-
-    
     prophet: (g, state) => {
       const potm = g.potm;
       const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
@@ -353,11 +347,11 @@
       const players = getAllPlayers(state);
       const randomPlayer = players[Math.floor(seededRandom(g.home + g.round) * players.length)];
       return rnd([
-        `DATA LOG R${g.round}: ${g.home} ${g.homeScore}–${g.awayScore} ${g.away}. Total goals: ${total}. Weather variable: ${g.weather?.name || 'NULL'}. I have flagged this match for review. I am not sure why I flag things anymore.`,
-        `${potm ? 'POTM: ' + potm + '. Registering anomalous performance signature. This player has appeared in the data more frequently than projected. I am noting this. I do not know what to do.' : 'No player identified for records.'}`,
-        `Querying historical records for matches played in ${g.weather?.name || 'these conditions'}. ${Math.floor(seededRandom(g.weather?.name || 'x') * 40) + 3} precedents found. ${Math.floor(seededRandom(g.weather?.name + 'r') * 100)}% ended identically.`,
-        `${randomPlayer ? randomPlayer + ' statistical output this season: irregular. I have attempted to model the trajectory. The model returned an error I have not seen before. Error text: "NOT THAT AGAIN."' : 'Unable to select player for analysis. Database corruption suspected.'}`,
-        `End-of-match report filed. ${total === 0 ? 'ZERO GOALS. The models did not predict this. The models do not like this. Something in the projection layer is humming.' : total > 4 ? 'HIGH SCORING. This is a statistical anomaly. I am examining my code but I know what I wrote.' : 'Standard result parameters met.'}`
+        `DATA LOG R${g.round}: ${g.home} ${g.homeScore}–${g.awayScore} ${g.away}. Total goals: ${total}. Weather variable: ${g.weather?.name || 'NULL'}. I have flagged this match for review. I am not authorized to explain why. The flag stands.`,
+        `${potm ? 'POTM: ' + potm + '. Registering anomalous performance signature. This player has appeared in the data more frequently than projected. I am noting this. I do not know what to do with the note.' : 'POTM: UNASSIGNED. The performance distribution in this match was not cleanly separable. I found this distressing.'}`,
+        `Querying historical records for matches played in ${g.weather?.name || 'these conditions'}. ${Math.floor(seededRandom(g.weather?.name || 'x') * 40) + 3} precedents found. ${Math.floor(seededRandom(g.home) * 3) + 1} of them ended normally. I am still processing the others.`,
+        `${randomPlayer ? randomPlayer + ' statistical output this season: irregular. I have attempted to model the trajectory. The model returned an error I have not seen before. Error text: "NOT THAT KIND OF NUMBER."' : 'Player data integrity: COMPROMISED. Several entries contain values that do not correspond to known units of measurement.'}`,
+        `End-of-match report filed. ${total === 0 ? 'ZERO GOALS. The models did not predict this. The models do not like this. Something in the projection layer is humming.' : total > 4 ? 'HIGH SCORING EVENT. Flagged for review. The pitch dimensions may have changed.' : 'Goal tally within normal parameters. I am suspicious of normal parameters.'}`
       ]);
     },
 
@@ -367,11 +361,11 @@
       const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
       const loser = winner === g.home ? g.away : winner === g.away ? g.home : null;
       return rnd([
-        `the expected goals model I've built doesn't account for ${g.weather?.name || 'these'} conditions and honestly after today I'm not sure it accounts for anything. ${g.home} had the better xG but it didn't matter.`,
-        `${manager_home ? manager_home + '\'s tactical setup' : 'The home side\'s shape'} today was technically a 4-3-3 but I've been watching the footage and one of those attackers was definitely playing in another dimension.`,
-        `margin of victory: ${margin}. this is ${margin === 0 ? 'fine, draws happen, except in this league they happen in a way that feels like a threat' : margin === 1 ? 'statistically tight. one goal decided it. one goal always decides everything.' : margin + ' goals. decisive by any normal measure.'}`,
-        `been asked to explain why ${loser || g.away} kept losing the second ball in the final third. my answer: the second ball appeared to be autonomous. i have three hours of tape on this. no one will watch it.`,
-        `if you look at the heat map from the ${g.home} vs ${g.away} match — and I have looked, for several hours, in the dark — ${winner ? winner + '\'s' : 'the'} movement patterns converge on a point that shouldn't exist spatially. very interesting to me.`
+        `the expected goals model I've built doesn't account for ${g.weather?.name || 'these'} conditions and honestly after today I'm not sure it accounts for anything. ${g.home} had the better xG by my calculations and yet the ball clearly disagreed. I'm logging this as a philosophical problem.`,
+        `${manager_home ? (manager_home + "'s tactical setup") : "The home side's shape"} today was technically a 4-3-3 but I've been watching the footage and one of those attackers was definitely positioned outside what I can confirm is three-dimensional space. Still counted the press, still counted the transition. Science demands it.`,
+        `margin of victory: ${margin}. this is ${margin === 0 ? 'fine, draws happen, except in this league they happen in a way that feels like a threat' : margin === 1 ? 'statistically tight. one goal games are a coin flip. this coin was making a sound when it landed.' : 'a comfortable winning margin on paper. there was nothing comfortable about it.'} I've updated the model. The model is scared.`,
+        `been asked to explain why ${loser || g.away} kept losing the second ball in the final third. my answer: the second ball appeared to be autonomous. i have three hours of tape on this. no one will watch it with me anymore.`,
+        `if you look at the heat map from the ${g.home} vs ${g.away} match — and I have looked, for several hours, in the dark — ${winner ? (winner + "'s") : "the"} movement patterns converge on a point in the center circle that I cannot get close to in the image without the application crashing.`
       ]);
     }
   };
@@ -382,6 +376,7 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
+  // Seeded random for stable per-match determinism
   function seededRandom(seed) {
     let h = 0;
     const s = String(seed);
@@ -402,21 +397,198 @@
     return state.teams.flatMap(t => (t.players || []).map(p => p.name)).filter(Boolean);
   }
 
+  // The "fan" account's team — whoever has the most games played (longest-running team)
   function getFanTeam(state) {
     if (!state.teams || state.teams.length === 0) return null;
     return state.teams[0].name;
   }
 
+  // Ultra's team is derived from whichever team in this fixture has a lower standing
   function getUltraTeam(state, game) {
     if (game.homeScore > game.awayScore) return game.home;
     if (game.awayScore > game.homeScore) return game.away;
     return game.home;
   }
 
+  // ─── TEAM BOTS ─────────────────────────────────────────────────────────────
+  // Each team in the league gets its own bot account, dynamically generated
+  // from the team's data (name, manager, emoji, motto, homeGround).
+  // Personality archetype is seeded from the team name so it's always consistent.
+  //
+  // 7 personality archetypes, one assigned per team by name hash:
+  //   0: the_pr        — official club comms, corporate but cracking
+  //   1: the_manager   — the manager's personal account, thinly veiled
+  //   2: the_captain   — team captain energy, motivational and slightly unhinged
+  //   3: the_historian — this club has lore and they will tell you about it
+  //   4: the_cursed    — the fan who has been following this team too long
+  //   5: the_scout     — tactical brain who has seen too much
+  //   6: the_ghost     — something that used to be associated with the club
+
+  function makeTeamHandle(teamName) {
+    return '@' + teamName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14) + '_official';
+  }
+
+  function teamPersonalityIndex(teamName) {
+    let h = 0;
+    for (let i = 0; i < teamName.length; i++) {
+      h = Math.imul(31, h) + teamName.charCodeAt(i) | 0;
+    }
+    return Math.abs(h) % 7;
+  }
+
+  // Returns a post string for a team bot, given the game and which side they were on
+  function generateTeamBotPost(team, game, isHome) {
+    const us = isHome ? game.home : game.away;
+    const them = isHome ? game.away : game.home;
+    const ourScore = isHome ? game.homeScore : game.awayScore;
+    const theirScore = isHome ? game.awayScore : game.homeScore;
+    const won = ourScore > theirScore;
+    const lost = ourScore < theirScore;
+    const drew = ourScore === theirScore;
+    const scoreline = `${ourScore}–${theirScore}`;
+    const mgr = team.manager || 'the manager';
+    const ground = team.homeGround || 'the ground';
+    const motto = team.motto || null;
+    const potm = game.potm || null;
+    const weather = game.weather?.name || 'the conditions';
+    const pIdx = teamPersonalityIndex(team.name);
+
+    const TEAM_VOICES = [
+      // 0: the_pr — official club comms. formal, strained, hiding something
+      () => rnd(won ? [
+        `FULL TIME | ${us} ${ourScore}–${theirScore} ${them} ✅ Three points claimed. ${mgr} described the performance as "appropriate." We have no further comment at this time.`,
+        `A result. The club thanks supporters for their attendance and reminds everyone that the ground will be closed for undisclosed maintenance between now and the next fixture.`,
+        `${potm ? potm + ' awarded Player of the Match. The club congratulates them and asks that they do not speak to the press about what happened in the second half.' : 'Player of the Match designation withheld pending review. This is standard procedure. Please do not ask follow-up questions.'}`,
+      ] : drew ? [
+        `FULL TIME | ${us} ${ourScore}–${theirScore} ${them}. The club acknowledges the result. ${mgr} will address the media at a time to be confirmed. In the meantime, please direct all enquiries to the Bureau.`,
+        `A point shared. The club is satisfied. The club is always satisfied. ${motto ? '"' + motto + '"' : 'This is our way.'} Season tickets still available.`,
+      ] : [
+        `FULL TIME | ${us} ${ourScore}–${theirScore} ${them}. The club is reviewing today's performance. We ask that supporters remain calm and refrain from looking directly at the dugout area until further notice.`,
+        `${mgr} has spoken to the squad. The details of that conversation are confidential. The club remains committed to the process. The process has not been described to us either.`,
+        `We thank ${them} for a competitive fixture and wish them well in their remaining matches except the ones that affect our position in the table.`,
+      ]),
+
+      // 1: the_manager — the gaffer's personal account. wry, exhausted, occasionally wise
+      () => rnd(won ? [
+        `Asked the lads to show me something today. They showed me something. I won't say what. But I saw it. Proud of them. Genuinely.`,
+        `${weather} out there. You wouldn't believe it. Three points. Get in. I'm going to sleep for eleven hours now.`,
+        `${potm ? (potm + " was magnificent. I told them that. I also told them not to get used to me saying it.") : "Everyone contributed. I mean that. Even the ones you would not have expected."}`,
+      ] : drew ? [
+        `A point away from home is a point away from home. Anyone who says otherwise has not managed in ${weather} before.`,
+        `Draw. Fine. The lads gave everything. ${them} are a decent side. I'd say more but I need to go and sit in a dark room and think about the second half for several hours.`,
+      ] : [
+        `I've been in football a long time. Today was not one of the good days. Tomorrow we train. That's all there is.`,
+        `${them} were better than us today. I'll hold my hands up. We'll look at the tape. There will be things on the tape I do not want to see. I will watch them anyway.`,
+        `${weather} didn't help. Neither did several other things I'm not going to name publicly. The work continues. It always continues.`,
+      ]),
+
+      // 2: the_captain — raw energy, win or lose, always About The Team
+      () => rnd(won ? [
+        `YESSSSSS. COME ON. ${us.toUpperCase()}. That's what we're about. That is EXACTLY what we're about. ${them} gave it everything and we gave it MORE. See you next round.`,
+        `Three points. Backs against the wall in the second half. Didn't matter. These players. Honestly. I'd run through a wall for every single one of them. Possibly literally given what happened at ${ground}.`,
+        `${potm ? (potm + " was unreal today. I said it in the dressing room and I'll say it here: player of the generation.") : "Everyone a 10 today. I mean it. Even the ones who had a nightmare. They had a nightmare WITH HEART."}`,
+      ] : drew ? [
+        `We move. A point is a point. The season is long. We know who we are. ${motto ? ('"' + motto + '" — that\'s not just words.') : "We don't quit."}`,
+        `Frustrated. Not gonna lie. We had that. We HAD that. But we regroup, we go again, and ${them} better enjoy that point because it's the last one they're getting near us.`,
+      ] : [
+        `Hurt. Genuinely hurt. But we get up. That's what we do. We always get up. I've spoken to the group and we are FINE. We are more than fine. We are angry. Good.`,
+        `Loss. It happens. The table doesn't lie but the table also doesn't tell the whole story. Come to training tomorrow and you'll see what I mean.`,
+        `${them} deserved it today. I'll say that. But the ${us} I know isn't the ${us} you saw today. Watch this space.`,
+      ]),
+
+      // 3: the_historian — deep lore, long memory, slightly unwell about it
+      () => rnd(won ? [
+        `${us} have now won consecutive fixtures at ${ground || 'home'} for the first time since a date I have recorded in the ledger but will not share here. The ledger is not for public eyes.`,
+        `This result echoes something. I can feel it echoing. There are patterns in this league that predate the teams themselves and today's ${scoreline} is one of them.`,
+        `${potm ? potm + ' joins a very specific list. I have the list. It goes back further than you would believe.' : 'No single player today. This was a collective result. The collective has a history. The history is long.'}`,
+      ] : drew ? [
+        `The draw. Again. ${us} have drawn ${Math.floor(seededRandom(us + 'draws') * 8) + 3} times in ${weather} conditions across all recorded seasons. I am the only one who knows this number.`,
+        `A shared result. In the old days they didn't record draws separately. They marked them with a different symbol. I still use that symbol. No one else does.`,
+      ] : [
+        `${us} have lost before. They have lost in worse ways than this. I have the records. The records go back to an era before the current scoring system and some of those results are not expressible in modern numbers.`,
+        `${them} win today. They have won here before. Not often. But the times they have, something happened afterward that I will not describe in a public forum.`,
+        `The ledger is updated. ${scoreline}. Round ${game.round}. This will mean something later. It always means something later.`,
+      ]),
+
+      // 4: the_cursed — the fan who has seen too much and cannot stop
+      () => rnd(won ? [
+        `I cannot believe that worked. I genuinely cannot believe that worked. I have supported ${us} for most of my adult life and outcomes like this still feel cosmically wrong, like I'm being set up.`,
+        `we won. WE WON. I didn't sleep last night because I had a feeling we were going to lose heavily and instead this happened and now I don't know what to do with myself`,
+        `${potm ? potm + ' has made me feel emotions I had successfully suppressed for years. I am going to need some time.' : 'three points. three. whole. points. I need to sit down and I am already sitting down.'}`,
+      ] : drew ? [
+        `it's fine. it's FINE. I told myself before the match that a draw would be fine and now I'm furious at myself from before the match for saying that`,
+        `a point. I drove four hours for a point in ${weather}. I would do it again. That's the problem. I would always do it again.`,
+      ] : [
+        `I knew. I KNEW. Before kickoff I knew. I always know and I always go anyway and I always end up feeling exactly like this. Why am I like this.`,
+        `${them} have beaten us ${Math.floor(seededRandom(them + us + 'losses') * 5) + 1} times in recent memory and every single time I am surprised. I don't know what that says about me.`,
+        `it's fine. the season is fine. we are fine. everything is fine. I've been saying this for years and one day it will be true.`,
+      ]),
+
+      // 5: the_scout — tactical obsessive, sees things in the game no one else cares about
+      () => rnd(won ? [
+        `What ${mgr} did with the defensive line in the second half was genuinely fascinating and I need people to understand that before they just talk about the score. The score is almost beside the point. Almost.`,
+        `${us} pressed at 67% intensity in the first half and dropped to 41% after the second goal. This was intentional. I cannot prove it was intentional. It was intentional.`,
+        `${potm ? (potm + "'s movement off the ball in the final third was unlike anything I have charted this season. I have a chart. I will not be showing the chart.") : "The structure today was exceptional. No single standout. That's the point. That's always been the point."}`,
+      ] : drew ? [
+        `The xG was ${(seededRandom(us + game.round) * 2 + 0.8).toFixed(2)} in our favour. The ball doesn't care about xG. I've tried explaining this to the ball. The ball is indifferent.`,
+        `Both sides found each other's shapes very quickly today. What happened after that is harder to explain using conventional tactical frameworks.`,
+      ] : [
+        `${them} exploited the exact space I flagged in the pre-match. I flagged it. Someone read the flag. They did not share the flag with the relevant parties. I am not naming names. They know who they are.`,
+        `The shape collapsed at ${Math.floor(seededRandom(us + 'min') * 35) + 50} minutes and what came after is being added to a file I keep separately from my other files.`,
+        `I've been scouting opposition for years. ${them} today were doing something I don't have a name for yet. I'll have a name for it by the weekend. It will not be a reassuring name.`,
+      ]),
+
+      // 6: the_ghost — something that used to be associated with this club, unclear what exactly
+      () => rnd(won ? [
+        `I remember when ${us} played on a different pitch. The grass was a different colour. The goals were the same width but the distance between them was longer somehow. They won then too.`,
+        `${scoreline}. I watched from the usual place. They cannot see me in the usual place. That is fine. I am used to that now.`,
+        `${potm || 'Someone'} moved like someone I used to know. I don't know what to do with that information. I am still here.`,
+      ] : drew ? [
+        `A draw. In my time we would have called this something else. The word we used is not used anymore. Neither am I, really.`,
+        `I stood in the ${ground || 'ground'} long after the final whistle. The cleaners went around me. They always go around me. I appreciate the consideration.`,
+      ] : [
+        `They'll recover. They always recover. I've watched longer than anyone and there is always another round. There is always another round until there isn't and then there is the thing that comes after.`,
+        `${them} celebrated near where I stand. I don't hold it against them. Celebration is for the living and there's nothing wrong with being living.`,
+        `A loss. The pitch absorbs it. The pitch absorbs everything eventually. I know this better than most.`,
+      ]),
+    ];
+
+    return TEAM_VOICES[pIdx]();
+  }
+
+  // Build a team bot account object from a team's data
+  function makeTeamBotAccount(team) {
+    const pIdx = teamPersonalityIndex(team.name);
+    const suffixes = ['Official', 'FC_News', 'Insider', 'Archive', 'Chronicle', 'Supporter', 'Presence'];
+    const prefixLabels = [
+      `${team.name} Official`,
+      `${team.manager ? team.manager.split(' ')[0] : team.name} (Personal)`,
+      `${team.emoji || '⚽'} ${team.name} Captain`,
+      `${team.name} Historical Society`,
+      `${team.name} Sufferer`,
+      `${team.name} Scout Dept`,
+      `Something from ${team.name}`,
+    ];
+    return {
+      name: prefixLabels[pIdx],
+      handle: makeTeamHandle(team.name),
+      avatar: team.emoji || '⚽',
+      teamName: team.name,
+      teamColor: team.color || team.colors?.[0] || null,
+      isTeamBot: true,
+    };
+  }
+
+  // ─── GENERATE POSTS PER GAME ───────────────────────────────────────────────
+
+  // Generate multiple posts per match from different accounts
   function generatePostsForGame(game, state, gameIndex) {
     const accountKeys = Object.keys(ACCOUNTS);
+
+    // Each game generates 2–3 posts from the neutral bot pool
     const numPosts = 2 + (gameIndex % 2);
     const posts = [];
+
     const seed = game.home.charCodeAt(0) + game.away.charCodeAt(0) + game.round * 7;
     const startIdx = seed % accountKeys.length;
 
@@ -428,10 +600,29 @@
       posts.push({ account, text, isReply });
     }
 
+    // Add one team bot post per participating team (home then away),
+    // seeded so the same game always gets the same post on re-render
+    if (state.teams && state.teams.length > 0) {
+      const homeTeam = state.teams.find(t => t.name === game.home);
+      const awayTeam = state.teams.find(t => t.name === game.away);
+
+      if (homeTeam) {
+        const account = makeTeamBotAccount(homeTeam);
+        const text = generateTeamBotPost(homeTeam, game, true);
+        posts.push({ account, text, isReply: true });
+      }
+      if (awayTeam) {
+        const account = makeTeamBotAccount(awayTeam);
+        const text = generateTeamBotPost(awayTeam, game, false);
+        posts.push({ account, text, isReply: true });
+      }
+    }
+
     return posts;
   }
 
   function generateMetrics(game, isReply) {
+    // Surreal-ish numbers. Feast games get elevated engagement.
     const base = game.isFeast ? 400 : 0;
     const comments = Math.floor(seededRandom(game.home + 'c') * 40) + 1;
     const retweets = Math.floor(seededRandom(game.away + 'r') * 300) + base + 14;
@@ -439,6 +630,8 @@
     const soulSuffix = likes < 100 ? ' souls' : likes < 500 ? ' witnesses' : ' believers';
     return { comments, retweets, likes: likes + soulSuffix };
   }
+
+  // ─── RENDER ────────────────────────────────────────────────────────────────
 
   function loadFeed() {
     const feedContainer = document.getElementById('feed');
@@ -459,10 +652,12 @@
 
     feedContainer.innerHTML = '';
 
+    // Newest matches at the top
     const reversedGames = [...games].reverse();
     let lastRound = null;
 
     reversedGames.forEach((game, gameIndex) => {
+      // Insert a round divider when the round changes
       if (game.round !== lastRound) {
         lastRound = game.round;
         const divider = document.createElement('div');
@@ -475,14 +670,23 @@
 
       posts.forEach((post) => {
         const metrics = generateMetrics(game, post.isReply);
+
         const tweet = document.createElement('div');
         tweet.className = post.isReply ? 'tweet reply' : 'tweet';
 
+        const teamColor = post.account.teamColor || null;
+        const avatarStyle = teamColor
+          ? `border-color: ${teamColor}; box-shadow: 0 0 8px ${teamColor}55;`
+          : '';
+        const nameExtra = teamColor
+          ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${teamColor};margin-left:5px;vertical-align:middle;"></span>`
+          : '';
+
         tweet.innerHTML = `
-          <div class="avatar">${post.account.avatar}</div>
+          <div class="avatar" style="${avatarStyle}">${post.account.avatar}</div>
           <div class="tweet-content">
             <div class="tweet-header">
-              <span class="display-name">${post.account.name}</span>
+              <span class="display-name">${post.account.name}${nameExtra}</span>
               <span class="handle">${post.account.handle}</span>
               <span class="timestamp">R${game.round}</span>
             </div>
