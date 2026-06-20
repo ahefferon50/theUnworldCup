@@ -1,4 +1,3 @@
-HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,7 +11,7 @@ HTML
       --border: #2f3336;
       --text: #e7e9ea;
       --dim: #71767b;
-      --accent: #ff4444; /* Bleeding red accent instead of twitter blue */
+      --accent: #ff4444;
     }
 
     body {
@@ -72,12 +71,33 @@ HTML
       background-color: rgba(255, 255, 255, 0.02);
     }
 
+    /* Round divider */
+    .round-divider {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,68,68,0.04);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .round-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
     .avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
       background: var(--card-bg);
-      font-size: 22px;
+      font-size: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -92,41 +112,48 @@ HTML
 
     .tweet-header {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       font-size: 15px;
       margin-bottom: 4px;
+      flex-wrap: wrap;
+      gap: 4px;
     }
 
     .display-name {
       font-weight: 700;
       color: var(--text);
-      margin-right: 4px;
     }
 
     .handle {
       color: var(--dim);
-      margin-right: 8px;
+      font-size: 14px;
     }
 
     .timestamp {
       color: var(--dim);
+      font-size: 13px;
+      margin-left: auto;
     }
 
     .tweet-text {
       font-size: 15px;
-      line-height: 20px;
+      line-height: 22px;
       white-space: pre-wrap;
+      margin-bottom: 10px;
     }
 
-    .match-tag {
+    /* Inline match tag — small, unobtrusive */
+    .match-ref {
       display: inline-block;
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--accent);
-      background: rgba(255, 68, 68, 0.1);
-      padding: 2px 8px;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
       border-radius: 4px;
-      font-weight: 600;
+    }
+    .match-ref strong {
+      color: var(--accent);
     }
 
     .tweet-actions {
@@ -134,14 +161,15 @@ HTML
       margin-top: 12px;
       color: var(--dim);
       font-size: 13px;
-      gap: 40px;
+      gap: 36px;
     }
 
     .action-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      cursor: pointer;
+      cursor: default;
+      user-select: none;
     }
 
     .action-item:hover {
@@ -153,6 +181,15 @@ HTML
       text-align: center;
       color: var(--dim);
       font-style: italic;
+      line-height: 1.8;
+    }
+
+    /* Reply-style indent */
+    .tweet.reply {
+      padding-left: 32px;
+      border-left: 2px solid var(--border);
+      margin-left: 20px;
+      border-bottom: 1px solid var(--border);
     }
   </style>
 </head>
@@ -164,52 +201,259 @@ HTML
       <p>Causality reports & timeline drift indicators</p>
     </header>
 
-    <div id="feed" class="feed">
-      </div>
+    <div id="feed" class="feed"></div>
   </div>
 
 <script>
   const STORAGE_KEY = 'unworldcup_v1';
 
-  // Distinct account archetypes to post the comments
-  const ACCOUNTS = [
-    { name: "The Ministry of Offside Math", handle: "@realsignals", avatar: "🔮" },
-    { name: "Local Groundskeeper (Missing)", handle: "@pitchwatcher", avatar: "💀" },
-    { name: "Unworld Cup Bureau", handle: "@the_index", avatar: "👁️" },
-    { name: "Archive Drone 09", handle: "@void_sports", avatar: "🛸" },
-    { name: "An Absolute Lad", handle: "@bum_time_enjoyer", avatar: "🍺" },
-    { name: "Ultra Sec 4", handle: "@red_void_ultras", avatar: "🚩" },
-    { name: "Terrace Prophet", handle: "@the_unseen", avatar: "🫀" }
-  ];
+  // ─── ACCOUNT ARCHETYPES ────────────────────────────────────────────────────
+  // Each account has a voice that shapes every post they make.
+  const ACCOUNTS = {
+    bureau: {
+      name: "Unworld Cup Bureau",
+      handle: "@the_index",
+      avatar: "👁️",
+      // Dry, official, deeply unsettling. Announces things like they're policy documents.
+      voice: 'official'
+    },
+    groundskeeper: {
+      name: "Local Groundskeeper (Missing)",
+      handle: "@pitchwatcher",
+      avatar: "💀",
+      // First-person, confused, trauma responses. Was there. Not sure what they saw.
+      voice: 'witness'
+    },
+    lad: {
+      name: "An Absolute Lad",
+      handle: "@bum_time_enjoyer",
+      avatar: "🍺",
+      // Genuine football fan who is slowly realizing this league is wrong. Uses normal football slang.
+      voice: 'fan'
+    },
+    ultras: {
+      name: "Ultra Sec 4",
+      handle: "@red_void_ultras",
+      avatar: "🚩",
+      // Aggressively partisan. Deeply committed to a team that hasn't won in years.
+      voice: 'ultra'
+    },
+    prophet: {
+      name: "Terrace Prophet",
+      handle: "@the_unseen",
+      avatar: "🫀",
+      // Cryptic pronouncements. Short. Never explains. Everything is a portent.
+      voice: 'prophet'
+    },
+    drone: {
+      name: "Archive Drone 09",
+      handle: "@void_sports",
+      avatar: "🛸",
+      // Robotic stats-and-data account that has developed opinions it cannot process.
+      voice: 'drone'
+    },
+    ministry: {
+      name: "Ministry of Offside Math",
+      handle: "@realsignals",
+      avatar: "🔮",
+      // Football analytics person who has gone completely off the deep end.
+      voice: 'analyst'
+    }
+  };
 
-  // Dynamic reaction generation engine
-  const REACTION_TEMPLATES = [
-    (g) => `I swear the ball was screaming every time it crossed the midfield line during the ${g.home} match. Anyone else hear that?`,
-    (g) => `Do not look directly at the ${g.home} technical area. It has expanded by three metres since kickoff.`,
-    (g) => `The scoreboard shows ${g.homeScore}–${g.awayScore}, but the wind behind the North Stand keeps whispering a completely different set of numbers.`,
-    (g) => `A predictable outcome for ${g.homeScore > g.awayScore ? g.home : g.away}. The sky has turned the color of a bruised kidney to celebrate.`,
-    (g) => `We are all just white chalk lines on a pitch that someone forgot to wipe away.`,
-    (g) => `The referee's whistle sounded like a dying bird during the second half. Honestly? Fitting.`,
-    (g) => `If you look closely at the grass at ${g.home}'s ground, it's twitching. Don't touch it.`,
-    (g) => `The ${g.away} fans left early. Not because their team was losing, but because their shadows refused to follow them out of the stadium turnstiles.`,
-    (g) => `Causality is leaking again. The match thread was updated twenty minutes before kickoff even happened.`,
-    (g) => `Who was that 12th player on the pitch for ${g.away}? They aren't on the roster sheet and they didn't have a face.`,
-    (g) => `I went to the match today. I woke up in a dry ditch three miles away with grass in my shoes. 10/10 game, would attend again.`,
-    (g) => `The stadium clocks ran backwards and honestly, it significantly improved the passing structure of ${g.home}.`,
-    (g) => `They played. The soil accepted the offering. The league table updates. We move on.`,
-    (g) => `Absolute tactical disasterclass from the ${g.awayScore < g.homeScore ? g.away : g.home} manager. Literally eaten alive by the local ecosystem.`,
-    (g) => `Squeaky bum time took on a terrifying, literal meaning when the pitch dimensions began to compress in the 80th minute.`,
-    (g) => `Three spectators in row G completely forgot their own names during that second goal. Probably for the best given the performance.`
-  ];
+  // ─── POST GENERATORS BY VOICE ──────────────────────────────────────────────
+  // Each function returns an array of possible posts for that account archetype.
+  // Posts reference real data: team names, player names, managers, scores, weather.
 
-  function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  const GENERATORS = {
+
+    official: (g, state) => {
+      const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
+      const loser = g.homeScore > g.awayScore ? g.away : g.homeScore < g.awayScore ? g.home : null;
+      const potm = g.potm;
+      return rnd([
+        `RESULT REGISTERED. ${g.home} ${g.homeScore}–${g.awayScore} ${g.away}. The appropriate authorities have been notified. Affected spectators should report to sector nine.`,
+        `Match classification: ${g.homeScore === g.awayScore ? 'NULL EVENT' : 'DECISIVE'}. ${winner ? winner + ' claims the points.' : 'No winner. The points have been absorbed.'} Citizens are reminded that the league table is not a suggestion.`,
+        `Post-match update: ${potm ? potm + ' has been named Player of the Match. Their details have been added to the register.' : 'Player of the Match designation: WITHHELD.'} Weather conditions during play: ${g.weather?.name || 'UNCLASSIFIED'}. The Bureau thanks you for your compliance.`,
+        `Round ${g.round} fixture processed. ${loser ? loser + ' are reminded that failure to accrue points is not, in itself, a violation. It merely places you closer to the threshold.' : g.home + ' and ' + g.away + ' have been issued matching certificates. Please do not compare them.'}`,
+        `NOTICE: The result of ${g.home} vs ${g.away} has been entered into the permanent record. Any attempts to dispute the scoreline will be handled by the Dispute Bureau, which does not exist.`
+      ]);
+    },
+
+    witness: (g, state) => {
+      const potm = g.potm;
+      const manager_home = getManager(state, g.home);
+      const manager_away = getManager(state, g.away);
+      return rnd([
+        `I was at the ${g.home} ground today. When the final whistle blew I couldn't remember which team I'd come to support. I'm still not sure. My seat was wet when I sat down but it hadn't rained.`,
+        `${potm ? potm + ' was out there doing something I cannot describe using standard football vocabulary.' : 'I watched the whole match and I genuinely cannot tell you what I saw.'} The grass smelled like copper and the hotdog stand was locked from the inside. Atmosphere: 10/10.`,
+        `The ${g.weather?.name || 'weather'} today at the ${g.home} match. The ${g.weather?.name || 'weather'} during a game like this. I need everyone to understand that I don't go to matches anymore after what happened in Round ${Math.max(1, g.round - 2)}, and yet. Here I am. Here I always am.`,
+        `${manager_home ? manager_home + ' was pacing the technical area and I could have sworn his shadow wasn\'t keeping up.' : 'The manager was very still in the technical area. Very, very still.'} Final score was ${g.homeScore}–${g.awayScore}. I wrote it on my hand so I wouldn't forget. My hand has since been washed.`,
+        `I don't remember the journey home from the ${g.home} vs ${g.away} match. I woke up in my kitchen. The kettle was already on. Something had been kind enough to make me tea.`
+      ]);
+    },
+
+    fan: (g, state) => {
+      const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
+      const loser = winner === g.home ? g.away : winner === g.away ? g.home : null;
+      const margin = Math.abs(g.homeScore - g.awayScore);
+      const potm = g.potm;
+      const myTeam = getFanTeam(state);
+      return rnd([
+        `mate I'm just trying to watch football and ${g.home} have got three players called ${potm || 'someone'} on their pitch I swear on my life something is wrong with the squad list`,
+        `${g.homeScore === g.awayScore ? 'draws are draws lads' : winner + ' deserved that honestly, ' + loser + ' were absolutely shocking second half'}, the ref was having a nightmare in the first half but look ${margin > 2 ? "that scoreline doesn't lie" : "it could've gone either way"} and I said what I said`,
+        `ngl the ${g.weather?.name || 'conditions'} today completely changed the game. ${g.home} can't play in these conditions. I said this before kickoff. My mates said I was wrong. I was not wrong. I am never wrong about ${g.home}.`,
+        `every time I look at the league table it looks different to how it looked twenty seconds ago. sent a screenshot to my brother and he said the numbers were different in his version. anyway ${myTeam || g.home} top of the table by the end of the season or I'll eat my shirt`,
+        `${potm ? potm + ' had a worldie today, genuinely' : 'no standout performer today, they were all a bit whatever'}, can't believe ${loser || g.away} thought this was the game to try pressing high. mate. against THESE lads. in THIS weather. boldness of it.`
+      ]);
+    },
+
+    ultra: (g, state) => {
+      const myTeam = getUltraTeam(state, g);
+      const enemy = myTeam === g.home ? g.away : g.home;
+      const myScore = myTeam === g.home ? g.homeScore : g.awayScore;
+      const theirScore = myTeam === g.home ? g.awayScore : g.homeScore;
+      const won = myScore > theirScore;
+      const drew = myScore === theirScore;
+      return rnd([
+        won
+          ? `WE GO AGAIN. ${myTeam?.toUpperCase() || g.home.toUpperCase()} NEVER SLEEP. ${enemy} came here and they left with nothing and they can count themselves lucky they left at all.`
+          : drew
+          ? `A point. A point. They will give us a point. Do you think a point is what we came here for. Do you think the lads in Block D queued for five hours to accept a POINT.`
+          : `I have been supporting ${myTeam || g.home} for twenty-three years and I have never once felt good about it and I never will and I will never stop. ${enemy} can rot.`,
+        `Ultra Sec 4 will be at every away fixture this season regardless of the dimensional irregularities that made last month's trip impossible to explain. We travel. We always travel. The transport is not always the issue.`,
+        `${enemy} fans have been talking all week. ALL WEEK. You've seen the forum. And now look at the table. Look at the table. Some of us have been saying this for years. THE TABLE KNOWS.`,
+        `CAPO NOTICE: The singing in the North End during the second half was noted by the Bureau of Sound Events and formally described as "acoustically anomalous." We take this as a compliment. Ultras never stop. Not even when asked to.`
+      ]);
+    },
+
+    prophet: (g, state) => {
+      const potm = g.potm;
+      const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
+      return rnd([
+        `${g.home} will be remembered. Not for the result. For what was underneath the result.`,
+        `${potm || 'Someone'} on that pitch today carries something they don't know about yet. It will become clear in the later rounds.`,
+        `The score was ${g.homeScore}–${g.awayScore}. This is one of the numbers. There are others.`,
+        winner ? `${winner} wins. The ground receives. The season continues to narrow.` : `Neither side wins. The draw is not neutral. The draw never is.`,
+        `Pay attention to what the ${g.weather?.name || 'weather'} does to the ball. Pay attention to the ball. The ball is trying to show you something.`,
+        `Round ${g.round}. We are closer now than we were. You can feel it if you stand near the pitch after the crowd has gone.`,
+        `${g.away} came a long way today. Distances in this league are not always geographical.`
+      ]);
+    },
+
+    drone: (g, state) => {
+      const total = g.homeScore + g.awayScore;
+      const potm = g.potm;
+      const players = getAllPlayers(state);
+      const randomPlayer = players[Math.floor(seededRandom(g.home + g.round) * players.length)];
+      return rnd([
+        `DATA LOG R${g.round}: ${g.home} ${g.homeScore}–${g.awayScore} ${g.away}. Total goals: ${total}. Weather variable: ${g.weather?.name || 'NULL'}. I have flagged this match for review. I am not authorized to explain why. The flag stands.`,
+        `${potm ? 'POTM: ' + potm + '. Registering anomalous performance signature. This player has appeared in the data more frequently than projected. I am noting this. I do not know what to do with the note.' : 'POTM: UNASSIGNED. The performance distribution in this match was not cleanly separable. I found this distressing.'}`,
+        `Querying historical records for matches played in ${g.weather?.name || 'these conditions'}. ${Math.floor(seededRandom(g.weather?.name || 'x') * 40) + 3} precedents found. ${Math.floor(seededRandom(g.home) * 3) + 1} of them ended normally. I am still processing the others.`,
+        `${randomPlayer ? randomPlayer + ' statistical output this season: irregular. I have attempted to model the trajectory. The model returned an error I have not seen before. Error text: "NOT THAT KIND OF NUMBER."' : 'Player data integrity: COMPROMISED. Several entries contain values that do not correspond to known units of measurement.'}`,
+        `End-of-match report filed. ${total === 0 ? 'ZERO GOALS. The models did not predict this. The models do not like this. Something in the projection layer is humming.' : total > 4 ? 'HIGH SCORING EVENT. Flagged for review. The pitch dimensions may have changed.' : 'Goal tally within normal parameters. I am suspicious of normal parameters.'}`
+      ]);
+    },
+
+    analyst: (g, state) => {
+      const manager_home = getManager(state, g.home);
+      const margin = Math.abs(g.homeScore - g.awayScore);
+      const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
+      const loser = winner === g.home ? g.away : winner === g.away ? g.home : null;
+      return rnd([
+        `the expected goals model I've built doesn't account for ${g.weather?.name || 'these'} conditions and honestly after today I'm not sure it accounts for anything. ${g.home} had the better xG by my calculations and yet the ball clearly disagreed. I'm logging this as a philosophical problem.`,
+        `${manager_home ? manager_home + '\'s tactical setup' : 'The home side\'s shape'} today was technically a 4-3-3 but I've been watching the footage and one of those attackers was definitely positioned outside what I can confirm is three-dimensional space. Still counted the press, still counted the transition. Science demands it.`,
+        `margin of victory: ${margin}. this is ${margin === 0 ? 'fine, draws happen, except in this league they happen in a way that feels like a threat' : margin === 1 ? 'statistically tight. one goal games are a coin flip. this coin was making a sound when it landed.' : 'a comfortable winning margin on paper. there was nothing comfortable about it.'} I've updated the model. The model is scared.`,
+        `been asked to explain why ${loser || g.away} kept losing the second ball in the final third. my answer: the second ball appeared to be autonomous. i have three hours of tape on this. no one will watch it with me anymore.`,
+        `if you look at the heat map from the ${g.home} vs ${g.away} match — and I have looked, for several hours, in the dark — ${winner ? winner + '\'s' : 'the'} movement patterns converge on a point in the center circle that I cannot get close to in the image without the application crashing.`
+      ]);
+    }
+  };
+
+  // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────
+
+  function rnd(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Seeded random for stable per-match determinism
+  function seededRandom(seed) {
+    let h = 0;
+    const s = String(seed);
+    for (let i = 0; i < s.length; i++) {
+      h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+    }
+    return Math.abs(h % 1000) / 1000;
+  }
+
+  function getManager(state, teamName) {
+    if (!state.teams) return null;
+    const team = state.teams.find(t => t.name === teamName);
+    return team?.manager || null;
+  }
+
+  function getAllPlayers(state) {
+    if (!state.teams) return [];
+    return state.teams.flatMap(t => (t.players || []).map(p => p.name)).filter(Boolean);
+  }
+
+  // The "fan" account's team — whoever has the most games played (longest-running team)
+  function getFanTeam(state) {
+    if (!state.teams || state.teams.length === 0) return null;
+    return state.teams[0].name;
+  }
+
+  // Ultra's team is derived from whichever team in this fixture has a lower standing
+  function getUltraTeam(state, game) {
+    // Ultras always back the underdog in the fixture, unless they've won
+    if (game.homeScore > game.awayScore) return game.home;
+    if (game.awayScore > game.homeScore) return game.away;
+    return game.home;
+  }
+
+  // Generate multiple posts per match from different accounts
+  function generatePostsForGame(game, state, gameIndex) {
+    const accountKeys = Object.keys(ACCOUNTS);
+
+    // Each game generates 2–3 posts from different accounts
+    const numPosts = 2 + (gameIndex % 2); // alternates 2 and 3
+    const posts = [];
+
+    // Deterministically pick which accounts post about this game
+    // (so the same game always gets the same accounts across renders)
+    const seed = game.home.charCodeAt(0) + game.away.charCodeAt(0) + game.round * 7;
+    const startIdx = seed % accountKeys.length;
+
+    for (let i = 0; i < numPosts; i++) {
+      const accountKey = accountKeys[(startIdx + i) % accountKeys.length];
+      const account = ACCOUNTS[accountKey];
+      const text = GENERATORS[account.voice](game, state);
+      const isReply = i > 0; // first post is a standalone, rest are "replies" indented
+
+      posts.push({ account, text, isReply });
+    }
+
+    return posts;
+  }
+
+  function generateMetrics(game, isReply) {
+    // Surreal-ish numbers. Feast games get elevated engagement.
+    const base = game.isFeast ? 400 : 0;
+    const comments = Math.floor(seededRandom(game.home + 'c') * 40) + 1;
+    const retweets = Math.floor(seededRandom(game.away + 'r') * 300) + base + 14;
+    const likes = Math.floor(seededRandom(game.home + game.round + 'l') * 800) + base;
+    const soulSuffix = likes < 100 ? ' souls' : likes < 500 ? ' witnesses' : ' believers';
+    return { comments, retweets, likes: likes + soulSuffix };
+  }
+
+  // ─── RENDER ────────────────────────────────────────────────────────────────
 
   function loadFeed() {
     const feedContainer = document.getElementById('feed');
     const rawData = localStorage.getItem(STORAGE_KEY);
-    
+
     if (!rawData) {
-      feedContainer.innerHTML = '<div class="no-data">The timeline is completely quiet. Run some match simulations first to broadcast signals.</div>';
+      feedContainer.innerHTML = '<div class="no-data">The timeline is completely quiet.<br>Run some match simulations first to broadcast signals.</div>';
       return;
     }
 
@@ -217,131 +461,61 @@ HTML
     const games = state.games || [];
 
     if (games.length === 0) {
-      feedContainer.innerHTML = '<div class="no-data">0 transmissions found. Awaiting match reports...</div>';
+      feedContainer.innerHTML = '<div class="no-data">0 transmissions found.<br>Awaiting match reports...</div>';
       return;
     }
 
     feedContainer.innerHTML = '';
-    
-    // Newest match events scroll to the top
-    const reversedGames = [...games].reverse();
 
-    reversedGames.forEach((game, index) => {
-      // Pick an account and a unique reaction template for this specific match
-      const account = ACCOUNTS[(index + game.round) % ACCOUNTS.length];
-      const chooseReaction = REACTION_TEMPLATES[(index * 7) % REACTION_TEMPLATES.length];
-      const commentText = chooseReaction(game);
-      
-      // Generate randomized social metrics
-      const retweets = Math.floor(Math.random() * 300) + 14;
-      const likes = Math.floor(Math.random() * 800) + " souls";
-      
-      const tweetHTML = `
-        <div class="tweet">
-          <div class="avatar">${game.weather?.icon || account.avatar}</div>
+    // Newest matches at the top
+    const reversedGames = [...games].reverse();
+    let lastRound = null;
+
+    reversedGames.forEach((game, gameIndex) => {
+      // Insert a round divider when the round changes
+      if (game.round !== lastRound) {
+        lastRound = game.round;
+        const divider = document.createElement('div');
+        divider.className = 'round-divider';
+        divider.textContent = `Round ${game.round}`;
+        feedContainer.appendChild(divider);
+      }
+
+      const posts = generatePostsForGame(game, state, gameIndex);
+
+      posts.forEach((post) => {
+        const metrics = generateMetrics(game, post.isReply);
+
+        const tweet = document.createElement('div');
+        tweet.className = post.isReply ? 'tweet reply' : 'tweet';
+
+        tweet.innerHTML = `
+          <div class="avatar">${post.account.avatar}</div>
           <div class="tweet-content">
             <div class="tweet-header">
-              <span class="display-name">${account.name}</span>
-              <span class="handle">${account.handle}</span>
-              <span class="handle">·</span>
+              <span class="display-name">${post.account.name}</span>
+              <span class="handle">${post.account.handle}</span>
               <span class="timestamp">R${game.round}</span>
             </div>
-            
-            <div class="tweet-text" style="margin-bottom: 12px;">
-              ${commentText}
-            </div>
-
-            <div style="border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2);">
-              <div style="font-size: 14px; font-weight: bold; margin-bottom: 4px; color: var(--accent);">
-                📊 FINAL: ${game.home} ${game.homeScore} – ${game.awayScore} ${game.away}
-              </div>
-              <div style="font-size: 13px; color: var(--dim); line-height: 16px; font-style: italic;">
-                "${game.report ? game.report.substring(0, 120) + '...' : 'The match details remain classified.'}"
-              </div>
-            </div>
-
-            <div>
-              <span class="match-tag">🌤️ ${game.weather?.name || 'Unrecorded Climate'}</span>
-            </div>
-
+            <div class="tweet-text">${post.text}</div>
+            ${!post.isReply ? `<div class="match-ref">
+              <strong>${game.home} ${game.homeScore}–${game.awayScore} ${game.away}</strong>
+              &nbsp;·&nbsp;${game.weather?.icon || '🌫️'} ${game.weather?.name || 'Unknown Conditions'}
+            </div>` : ''}
             <div class="tweet-actions">
-              <div class="action-item">💬 <span>${Math.floor(Math.random() * 35)}</span></div>
-              <div class="action-item">🔄 <span>${retweets}</span></div>
-              <div class="action-item">❤️ <span>${likes}</span></div>
+              <div class="action-item">💬 <span>${metrics.comments}</span></div>
+              <div class="action-item">🔄 <span>${metrics.retweets}</span></div>
+              <div class="action-item">❤️ <span>${metrics.likes}</span></div>
             </div>
           </div>
-        </div>
-      `;
-      
-      feedContainer.innerHTML += tweetHTML;
+        `;
+
+        feedContainer.appendChild(tweet);
+      });
     });
   }
 
   window.onload = loadFeed;
-    function loadFeed() {
-      const feedContainer = document.getElementById('feed');
-      
-      // 1. Pull data directly from your simulation storage
-      const rawData = localStorage.getItem(STORAGE_KEY);
-      
-      if (!rawData) {
-        feedContainer.innerHTML = '<div class="no-data">The timeline is completely quiet. Run some match simulations first to broadcast signals.</div>';
-        return;
-      }
-
-      const state = JSON.parse(rawData);
-      const games = state.games || [];
-
-      if (games.length === 0) {
-        feedContainer.innerHTML = '<div class="no-data">0 transmissions found. Awaiting match reports...</div>';
-        return;
-      }
-
-      // 2. Clear out container and render games backward (Newest tweets at the top)
-      feedContainer.innerHTML = '';
-      
-      const reversedGames = [...games].reverse();
-
-      reversedGames.forEach((game, index) => {
-        // Distribute accounts randomly so the feed has distinct voices
-        const account = ACCOUNTS[index % ACCOUNTS.length];
-        
-        // Format randomized metrics that look appropriately surreal
-        const retweets = Math.floor(Math.random() * 400) + (game.isFeast ? 666 : 12);
-        const likes = Math.floor(Math.random() * 900) + " souls";
-        
-        const tweetHTML = `
-          <div class="tweet">
-            <div class="avatar">${game.weather?.icon || account.avatar}</div>
-            <div class="tweet-content">
-              <div class="tweet-header">
-                <span class="display-name">${account.name}</span>
-                <span class="handle">${account.handle}</span>
-                <span class="handle">·</span>
-                <span class="timestamp">R${game.round}</span>
-              </div>
-              <div class="tweet-text">
-                <strong>${game.home} ${game.homeScore} – ${game.awayScore} ${game.away}</strong>
-                <br><br>${game.report || 'The match occurred in silence.'}
-              </div>
-              <div>
-                <span class="match-tag">🌤️ Weather: ${game.weather?.name || 'Unrecorded'}</span>
-              </div>
-              <div class="tweet-actions">
-                <div class="action-item">💬 <span>${Math.floor(Math.random() * 40)}</span></div>
-                <div class="action-item">🔄 <span>${retweets}</span></div>
-                <div class="action-item">❤️ <span>${likes}</span></div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        feedContainer.innerHTML += tweetHTML;
-      });
-    }
-
-    // Run layout on page open
-    window.onload = loadFeed;
-  </script>
+</script>
 </body>
 </html>
