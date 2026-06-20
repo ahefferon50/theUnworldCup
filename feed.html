@@ -234,6 +234,12 @@
       avatar: "🚩",
       voice: 'ultra'
     },
+    littleboy: {
+  name: "Lostlilboi",
+  handle: "@littleboilost",
+  avatar: "🧒",
+  voice: 'boy'
+},
     prophet: {
       name: "Terrace Prophet",
       handle: "@the_unseen",
@@ -316,6 +322,17 @@
       ]);
     },
 
+  boy: (g, state) => {
+  const winner = g.homeScore > g.awayScore ? g.home : g.away;
+  return rnd([
+      `are you my mommy?.`,
+      `I love the colors on the shirts!`,
+      `I'm lost`,
+      `hello? are you there?`,
+      ]);
+    },
+
+    
     prophet: (g, state) => {
       const potm = g.potm;
       const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
