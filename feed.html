@@ -587,13 +587,15 @@
   // Build a team bot account object from a team's data
   function makeTeamBotAccount(team) {
     const pIdx = teamPersonalityIndex(team.name);
-    const suffixes = ['Official', 'FC_News', 'Insider', 'Archive', 'Chronicle', 'Supporter', 'Presence'];
+    const suffixes = ['Official', 'FC_News', 'Insider', 'Archive', 'Chronicle', 'Supporter', 'Presence', 'ITK','Pod'];
     const prefixLabels = [
       `${team.name} Official`,
       `${team.manager ? team.manager.split(' ')[0] : team.name} (Personal)`,
       `${team.emoji || '⚽'} ${team.name} Captain`,
       `${team.name} Historical Society`,
+      `${team.name} 4ever`,
       `${team.name} Sufferer`,
+      `${team.name} POD`,
       `${team.name} Scout Dept`,
       `Something from ${team.name}`,
     ];
