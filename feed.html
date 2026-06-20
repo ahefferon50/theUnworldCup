@@ -168,18 +168,116 @@ HTML
       </div>
   </div>
 
-  <script>
-    const STORAGE_KEY = 'unworldcup_v1';
+<script>
+  const STORAGE_KEY = 'unworldcup_v1';
 
-    // Account profiles to make the data feel alive and weird
-    const ACCOUNTS = [
-      { name: "The Ministry of Offside Math", handle: "@realsignals", avatar: "🔮" },
-      { name: "Local Groundskeeper (Missing)", handle: "@pitchwatcher", avatar: "💀" },
-      { name: "Unworld Cup Bureau", handle: "@the_index", avatar: "👁️" },
-      { name: "Archive Drone 09", handle: "@void_sports", avatar: "🛸" },
-      { name: "An Absolute Lad", handle: "@bum_time_enjoyer", avatar: "🍺" }
-    ];
+  // Distinct account archetypes to post the comments
+  const ACCOUNTS = [
+    { name: "The Ministry of Offside Math", handle: "@realsignals", avatar: "🔮" },
+    { name: "Local Groundskeeper (Missing)", handle: "@pitchwatcher", avatar: "💀" },
+    { name: "Unworld Cup Bureau", handle: "@the_index", avatar: "👁️" },
+    { name: "Archive Drone 09", handle: "@void_sports", avatar: "🛸" },
+    { name: "An Absolute Lad", handle: "@bum_time_enjoyer", avatar: "🍺" },
+    { name: "Ultra Sec 4", handle: "@red_void_ultras", avatar: "🚩" },
+    { name: "Terrace Prophet", handle: "@the_unseen", avatar: "🫀" }
+  ];
 
+  // Dynamic reaction generation engine
+  const REACTION_TEMPLATES = [
+    (g) => `I swear the ball was screaming every time it crossed the midfield line during the ${g.home} match. Anyone else hear that?`,
+    (g) => `Do not look directly at the ${g.home} technical area. It has expanded by three metres since kickoff.`,
+    (g) => `The scoreboard shows ${g.homeScore}–${g.awayScore}, but the wind behind the North Stand keeps whispering a completely different set of numbers.`,
+    (g) => `A predictable outcome for ${g.homeScore > g.awayScore ? g.home : g.away}. The sky has turned the color of a bruised kidney to celebrate.`,
+    (g) => `We are all just white chalk lines on a pitch that someone forgot to wipe away.`,
+    (g) => `The referee's whistle sounded like a dying bird during the second half. Honestly? Fitting.`,
+    (g) => `If you look closely at the grass at ${g.home}'s ground, it's twitching. Don't touch it.`,
+    (g) => `The ${g.away} fans left early. Not because their team was losing, but because their shadows refused to follow them out of the stadium turnstiles.`,
+    (g) => `Causality is leaking again. The match thread was updated twenty minutes before kickoff even happened.`,
+    (g) => `Who was that 12th player on the pitch for ${g.away}? They aren't on the roster sheet and they didn't have a face.`,
+    (g) => `I went to the match today. I woke up in a dry ditch three miles away with grass in my shoes. 10/10 game, would attend again.`,
+    (g) => `The stadium clocks ran backwards and honestly, it significantly improved the passing structure of ${g.home}.`,
+    (g) => `They played. The soil accepted the offering. The league table updates. We move on.`,
+    (g) => `Absolute tactical disasterclass from the ${g.awayScore < g.homeScore ? g.away : g.home} manager. Literally eaten alive by the local ecosystem.`,
+    (g) => `Squeaky bum time took on a terrifying, literal meaning when the pitch dimensions began to compress in the 80th minute.`,
+    (g) => `Three spectators in row G completely forgot their own names during that second goal. Probably for the best given the performance.`
+  ];
+
+  function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function loadFeed() {
+    const feedContainer = document.getElementById('feed');
+    const rawData = localStorage.getItem(STORAGE_KEY);
+    
+    if (!rawData) {
+      feedContainer.innerHTML = '<div class="no-data">The timeline is completely quiet. Run some match simulations first to broadcast signals.</div>';
+      return;
+    }
+
+    const state = JSON.parse(rawData);
+    const games = state.games || [];
+
+    if (games.length === 0) {
+      feedContainer.innerHTML = '<div class="no-data">0 transmissions found. Awaiting match reports...</div>';
+      return;
+    }
+
+    feedContainer.innerHTML = '';
+    
+    // Newest match events scroll to the top
+    const reversedGames = [...games].reverse();
+
+    reversedGames.forEach((game, index) => {
+      // Pick an account and a unique reaction template for this specific match
+      const account = ACCOUNTS[(index + game.round) % ACCOUNTS.length];
+      const chooseReaction = REACTION_TEMPLATES[(index * 7) % REACTION_TEMPLATES.length];
+      const commentText = chooseReaction(game);
+      
+      // Generate randomized social metrics
+      const retweets = Math.floor(Math.random() * 300) + 14;
+      const likes = Math.floor(Math.random() * 800) + " souls";
+      
+      const tweetHTML = `
+        <div class="tweet">
+          <div class="avatar">${game.weather?.icon || account.avatar}</div>
+          <div class="tweet-content">
+            <div class="tweet-header">
+              <span class="display-name">${account.name}</span>
+              <span class="handle">${account.handle}</span>
+              <span class="handle">·</span>
+              <span class="timestamp">R${game.round}</span>
+            </div>
+            
+            <div class="tweet-text" style="margin-bottom: 12px;">
+              ${commentText}
+            </div>
+
+            <div style="border: 1px solid var(--border); padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2);">
+              <div style="font-size: 14px; font-weight: bold; margin-bottom: 4px; color: var(--accent);">
+                📊 FINAL: ${game.home} ${game.homeScore} – ${game.awayScore} ${game.away}
+              </div>
+              <div style="font-size: 13px; color: var(--dim); line-height: 16px; font-style: italic;">
+                "${game.report ? game.report.substring(0, 120) + '...' : 'The match details remain classified.'}"
+              </div>
+            </div>
+
+            <div>
+              <span class="match-tag">🌤️ ${game.weather?.name || 'Unrecorded Climate'}</span>
+            </div>
+
+            <div class="tweet-actions">
+              <div class="action-item">💬 <span>${Math.floor(Math.random() * 35)}</span></div>
+              <div class="action-item">🔄 <span>${retweets}</span></div>
+              <div class="action-item">❤️ <span>${likes}</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      feedContainer.innerHTML += tweetHTML;
+    });
+  }
+
+  window.onload = loadFeed;
     function loadFeed() {
       const feedContainer = document.getElementById('feed');
       
