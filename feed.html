@@ -204,6 +204,34 @@
     <div id="feed" class="feed"></div>
   </div>
 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2XngHSIcP-A6_ebpEZR4LyZNJ5mz01LM",
+    authDomain: "unworldcup.firebaseapp.com",
+    databaseURL: "https://unworldcup-default-rtdb.firebaseio.com",
+    projectId: "unworldcup",
+    storageBucket: "unworldcup.firebasestorage.app",
+    messagingSenderId: "666050004526",
+    appId: "1:666050004526:web:54f2973452797e0b6581bf"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const leagueRef = ref(db, 'league');
+
+  // Push live state into the feed whenever Firebase updates
+  onValue(leagueRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      window._liveState = data;
+      if (typeof window._renderFeed === 'function') window._renderFeed(data);
+    }
+  });
+</script>
+
 <script>
   const STORAGE_KEY = 'unworldcup_v1';
 
@@ -633,16 +661,8 @@
 
   // ─── RENDER ────────────────────────────────────────────────────────────────
 
-  function loadFeed() {
+  function renderFeed(state) {
     const feedContainer = document.getElementById('feed');
-    const rawData = localStorage.getItem(STORAGE_KEY);
-
-    if (!rawData) {
-      feedContainer.innerHTML = '<div class="no-data">The timeline is completely quiet.<br>Run some match simulations first to broadcast signals.</div>';
-      return;
-    }
-
-    const state = JSON.parse(rawData);
     const games = state.games || [];
 
     if (games.length === 0) {
@@ -708,7 +728,36 @@
     });
   }
 
-  window.onload = loadFeed;
+  // Expose so the Firebase module block can call it on live updates
+  window._renderFeed = renderFeed;
+
+  // On load: show a connecting indicator, then render from localStorage as
+  // an immediate fallback while Firebase comes in (usually < 1 second).
+  window.onload = function () {
+    const feedContainer = document.getElementById('feed');
+
+    // If Firebase has already fired by the time onload runs, use it directly
+    if (window._liveState) {
+      renderFeed(window._liveState);
+      return;
+    }
+
+    // Otherwise show a brief connecting state, and try localStorage as fallback
+    feedContainer.innerHTML = '<div class="no-data" id="connecting-msg">Connecting to the Unworld...<br><span style="font-size:11px;opacity:0.5">syncing with Firebase</span></div>';
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const localState = JSON.parse(raw);
+        if ((localState.games || []).length > 0) {
+          renderFeed(localState);
+        }
+      } catch (e) { /* ignore malformed local data */ }
+    }
+
+    // Firebase onValue will call window._renderFeed when it arrives,
+    // overwriting whatever the localStorage fallback rendered.
+  };
 </script>
 </body>
 </html>
