@@ -224,13 +224,15 @@
       // First-person, confused, trauma responses. Was there. Not sure what they saw.
       voice: 'witness'
     },
+    
     L0stlittleb0i: {
       name: "L0stlilB0i)",
       handle: "@littleb0ilost",
       avatar: "🧒",
-      // a lost little boy.
+      // a lost little boy
       voice: 'boy'
     },
+    
     lad: {
       name: "An Absolute Lad",
       handle: "@bum_time_enjoyer",
@@ -362,12 +364,12 @@
       ]);
     },
   
-  boy: (g, state) => {
-    const manager_home = getManager(state, g.home);
-    const margin = Math.abs(g.homeScore - g.awayScore);
-    const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
-    const loser = winner === g.home ? g.away : winner === g.away ? g.home : null;
-    return rnd([
+    boy: (g, state) => {
+      const manager_home = getManager(state, g.home);
+      const margin = Math.abs(g.homeScore - g.awayScore);
+      const winner = g.homeScore > g.awayScore ? g.home : g.homeScore < g.awayScore ? g.away : null;
+      const loser = winner === g.home ? g.away : winner === g.away ? g.home : null;
+      return rnd([
         `Are you my mommy?`,
         `I'm lost!`,
         `I love the bright colors of the uniforms!.`,
