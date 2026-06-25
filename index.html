@@ -256,6 +256,11 @@ button:disabled{opacity:.35;pointer-events:none}
           <button class="primary" onclick="saveWeights()">save weights</button>
           <button class="warn" onclick="runSim()">simulate round</button>
         </div>
+        <div class="brow" style="margin-top:10px;align-items:center">
+          <span style="font-size:10px;color:var(--fg3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap">batch simulate:</span>
+          <input type="number" id="batchRoundCount" min="1" max="38" value="5" style="width:70px;padding:6px 8px;font-size:12px">
+          <button class="warn" onclick="runSimBatch()">simulate N rounds</button>
+        </div>
       </div>
       <div class="divider"></div>
       <div class="slabel">league settings</div>
@@ -474,6 +479,7 @@ function generateReport(game) {
   if (defPool.length && roll(0.65)) parts.push(rnd(defPool));
   if (midPool.length && roll(0.60)) parts.push(rnd(midPool));
   if (parts.length === 0 && all.length) parts.push(`${rnd(all).name} was present for the duration and has been warned.`);
+  if (parts.length === 0) parts.push(rnd(atmPool)); // always ensure at least one sentence
 
   let potmPlayer = null;
   if (all.length && roll(0.55)) {
@@ -1557,6 +1563,90 @@ function generateSchedule(teams) {
   return rounds;
 }
 
+function runSimBatch() {
+  const input = document.getElementById('batchRoundCount');
+  const n = Math.max(1, Math.min(38, parseInt(input ? input.value : 5) || 5));
+  if (state.teams.length < 2) { flash('need 2+ teams'); return; }
+  if (state.activeEvent) { flash('end the active event before batch simulating'); return; }
+  let count = 0;
+  for (let i = 0; i < n; i++) {
+    // Run the core sim logic inline (no feast/event routing)
+    const scheduleTeamIds = JSON.stringify((state.scheduleTeamIds||[]));
+    const currentTeamIds  = JSON.stringify(state.teams.map(t=>t.id));
+    if (scheduleTeamIds !== currentTeamIds) {
+      state.scheduleTeamIds = state.teams.map(t=>t.id);
+      state.scheduleRound = 0;
+    }
+    const schedule = generateSchedule(state.teams);
+    if (!schedule.length) break;
+
+    state.roundNum = (state.roundNum||0) + 1;
+    const schedIdx = (state.scheduleRound || 0) % schedule.length;
+    const slot = schedule[schedIdx];
+    state.scheduleRound = schedIdx + 1;
+
+    const weather = rollWeather();
+    if (weather.effect === 'blackout') {
+      const allDrafted = Object.keys(state.draftedBy);
+      if (allDrafted.length > 0)
+        weather._heroId = allDrafted[Math.floor(Math.random() * allDrafted.length)];
+    }
+
+    for (const [hId, aId] of slot.pairs) {
+      const h = state.teams.find(t=>t.id===hId);
+      const a = state.teams.find(t=>t.id===aId);
+      if (!h || !a) continue;
+      const hRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===h.id)
+        .map(([pid])=>state.players.find(p=>p.id===pid))
+        .filter(p => p && !(state.injuries||{})[p.id]);
+      const aRaw = Object.entries(state.draftedBy).filter(([pid,tid])=>tid===a.id)
+        .map(([pid])=>state.players.find(p=>p.id===pid))
+        .filter(p => p && !(state.injuries||{})[p.id]);
+      const hR = hRaw.map(p => applyWeather(p, weather, state.players));
+      const aR = aRaw.map(p => applyWeather(p, weather, state.players));
+
+      const hAtk = hR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+      const hMid = hR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+      const hDef = hR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+      const hGk  = hR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+      const aAtk = aR.filter(p=>p.pos==='attacker').reduce((s,p)=>s+calcScore(p),0);
+      const aMid = aR.filter(p=>p.pos==='midfielder').reduce((s,p)=>s+calcScore(p),0);
+      const aDef = aR.filter(p=>p.pos==='defender').reduce((s,p)=>s+calcScore(p),0);
+      const aGk  = aR.filter(p=>p.pos==='goalie').reduce((s,p)=>s+calcScore(p),0);
+
+      const homeBoost = Math.floor(Math.random()*10) + 3;
+      const hPow = hAtk*2 + hMid - (aDef+aGk+aMid*0.5) + Math.floor(Math.random()*80) + 20 + homeBoost;
+      const aPow = aAtk*2 + aMid - (hDef+hGk+hMid*0.5) + Math.floor(Math.random()*80) + 20;
+
+      const g = {
+        home: h.name, away: a.name, homeId: h.id, awayId: a.id,
+        homeScore: Math.max(0, Math.round(hPow/120)),
+        awayScore: Math.max(0, Math.round(aPow/120)),
+        round: state.roundNum,
+        byeTeam: slot.byeId ? (state.teams.find(t=>t.id===slot.byeId)||{name:'unknown'}).name : null,
+        weather: {
+          name: weather.name, icon: weather.icon, color: weather.color,
+          desc: weather.desc, roll: weather.roll,
+          reroll: weather.reroll || null,
+          originalName: weather.originalName || null,
+          heroId: weather._heroId || null,
+        }
+      };
+      g.report = generateReport(g);
+      if (g._potmId) {
+        if (!state.potmCounts) state.potmCounts = {};
+        state.potmCounts[g._potmId] = (state.potmCounts[g._potmId]||0) + 1;
+        g.potmId = g._potmId;
+        delete g._potmId;
+      }
+      state.games.push(g);
+    }
+    count++;
+  }
+  saveState(); renderLeague(); renderStandings(); renderOwner();
+  flash(`batch complete — ${count} round${count!==1?'s':''} simulated — now at round ${state.roundNum}`);
+}
+
 function runSim() {
   if (state.teams.length < 2) { flash('need 2+ teams'); return; }
 
@@ -1724,7 +1814,7 @@ function runSim() {
       awayScore: Math.max(0, Math.round(aPow/120)),
       round: state.roundNum,
       byeTeam: slot.byeId ? (state.teams.find(t=>t.id===slot.byeId)||{name:'unknown'}).name : null,
-      isBloodsport: state.activeEvent === 'bloodsport' || undefined,
+      isBloodsport: state.activeEvent === 'bloodsport' ? true : undefined,
       weather: {
         name: weather.name, icon: weather.icon, color: weather.color,
         desc: weather.desc, roll: weather.roll,
